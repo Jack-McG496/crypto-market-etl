@@ -2,11 +2,12 @@
 
 ## Overview
 An end-to-end ETL pipeline that collects cryptocurrency market data
-(price, volume, market cap, sentiment) and prepares it for analysis.
+(price, volume, market cap, sentiment) from API's, prepares it (cleaning, handling erronious values), optimises for analysis.
 
 ## Data Sources
 - CoinGecko API
 - Crypto Fear & Greed Index
+- Key News
 
 ## Architecture
 Extract → Transform → Load
@@ -17,6 +18,7 @@ Extract → Transform → Load
 - Market Cap
 - Fear & Greed Index
 - Volatility (derived)
+- Headline news
 
 ## Tech Stack
 - Python
