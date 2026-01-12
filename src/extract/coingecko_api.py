@@ -4,6 +4,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+COINS = ["bitcoin", "ethereum", "dogecoin"]
+
 # fetch
 def fetch_coin_market_data(coin_id: str):
     """
@@ -45,5 +47,6 @@ def save_raw_json(data: dict, coin: str):
 
 
 if __name__ == "__main__":
-    raw_data = fetch_coin_market_data("ethereum")
-    save_raw_json(raw_data, "ethereum")
+    for coin in COINS:
+        raw_data = fetch_coin_market_data(coin)
+        save_raw_json(raw_data, coin)
