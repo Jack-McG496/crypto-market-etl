@@ -5,33 +5,12 @@ from datetime import datetime
 from pathlib import Path
 
 # fetch
-def fetch_bitcoin_market_data():
+def fetch_coin_market_data(coin_id: str):
     """
-        Fetch current Bitcoin market data from CoinGecko API.
+        Fetch current market data from CoinGecko API.
         Returns raw JSON response.
     """
-    url = "https://api.coingecko.com/api/v3/coins/bitcoin"
-
-    params = {
-        "localization": "false",
-        "tickers": "false",
-        "market_data": "true",
-        "community_data": "false",
-        "developer_data": "false",
-        "sparkline": "false",
-    }
-
-    response = requests.get(url, params=params, timeout=10)
-    response.raise_for_status()
-
-    return response.json()
-
-def fetch_ethereum_market_data():
-    """
-        Fetch current Bitcoin market data from CoinGecko API.
-        Returns raw JSON response.
-    """
-    url = "https://api.coingecko.com/api/v3/coins/ethereum"
+    url = f"https://api.coingecko.com/api/v3/coins/{coin_id}"
 
     params = {
         "localization": "false",
@@ -48,7 +27,7 @@ def fetch_ethereum_market_data():
     return response.json()
 
 # store
-def save_raw_json(data: dict):
+def save_raw_json(data: dict, coin: str):
     """
     Save raw API response to data/raw with timestamped filename.
     """
@@ -57,7 +36,7 @@ def save_raw_json(data: dict):
     raw_data_dir = Path("data/raw")
     raw_data_dir.mkdir(parents=True, exist_ok=True)
 
-    file_path = raw_data_dir / f"ethereum_market_data_{timestamp}.json"
+    file_path = raw_data_dir / f"{coin}_market_data_{timestamp}.json"
 
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2)
@@ -66,5 +45,5 @@ def save_raw_json(data: dict):
 
 
 if __name__ == "__main__":
-    ethereum_data = fetch_ethereum_market_data()
-    save_raw_json(ethereum_data)
+    raw_data = fetch_coin_market_data("ethereum")
+    save_raw_json(raw_data, "ethereum")
