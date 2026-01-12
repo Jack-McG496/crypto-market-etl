@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-COINS = ["bitcoin", "ethereum", "dogecoin"]
+COINS = ["bitcoin", "ethereum"]
 
 # fetch
 def fetch_coin_market_data(coin_id: str):
@@ -29,7 +29,7 @@ def fetch_coin_market_data(coin_id: str):
     return response.json()
 
 # store
-def save_raw_json(data: dict, coin: str):
+def save_raw_json(data: dict, source_name: str):
     """
     Save raw API response to data/raw with timestamped filename.
     """
@@ -38,7 +38,7 @@ def save_raw_json(data: dict, coin: str):
     raw_data_dir = Path("data/raw")
     raw_data_dir.mkdir(parents=True, exist_ok=True)
 
-    file_path = raw_data_dir / f"{coin}_market_data_{timestamp}.json"
+    file_path = raw_data_dir / f"{source_name}_market_data_{timestamp}.json"
 
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2)
