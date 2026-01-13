@@ -19,6 +19,13 @@ Extract → Transform → Load
 - Fear & Greed Index
 - Volatility (derived)
 - Headline news
+### Core market fields:
+- coin_id 
+  symbol 
+  name timestamp (UTC)
+  current_price_usd market_cap_usd 
+  total_volume_usd 
+  circulating_supply price_change_24h_pct
 
 ## Tech Stack
 - Python
