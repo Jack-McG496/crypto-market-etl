@@ -1,6 +1,6 @@
-from extract.coingecko_api import fetch_coin_market_data, save_raw_json
-from extract.fear_greed_api import fetch_fear_greed_index, save_raw_json as save_fg_json
-from transform.market_data_transform import run_transform, save_processed_data
+from src.extract.coingecko_api import fetch_coin_market_data, save_raw_json
+from src.extract.fear_greed_api import fetch_fear_greed_index, save_raw_json as save_fg_json
+from src.transform.market_data_transform import run_transform, save_processed_data
 
 
 def run_coingecko():
