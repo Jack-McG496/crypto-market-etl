@@ -2,7 +2,9 @@ import json
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
+from utils.logger import get_logger
 
+logger = get_logger(__name__)
 
 RAW_DATA_DIR = Path("data/raw")
 PROCESSED_DATA_DIR = Path("data/processed")
@@ -12,6 +14,7 @@ def load_latest_coingecko_file(coin: str) -> dict:
     """
     Load the latest raw CoinGecko JSON file for a given coin.
     """
+
     files = sorted(
         RAW_DATA_DIR.glob(f"coingecko_{coin}_*.json"),
         reverse=True
@@ -47,14 +50,22 @@ def run_transform(coins: list[str]) -> pd.DataFrame:
     """
     Run transform for multiple coins and return a DataFrame.
     """
+    logger.info("Starting data transformation")
+
     rows = []
 
     for coin in coins:
         raw_data = load_latest_coingecko_file(coin)
-        transformed = transform_market_data(raw_data)
-        rows.append(transformed)
+        try:
+            transformed = transform_market_data(raw_data)
+            rows.append(transformed)
+        except KeyError as e:
+            logger.warning(f"Missing expected field: {e}")
+            continue
+
 
     df = pd.DataFrame(rows)
+    logger.info(f"Transformation complete: {len(df)} rows")
     return df
 
 
