@@ -1,7 +1,8 @@
 from src.extract.coingecko_api import fetch_coin_market_data, save_raw_json
 from src.extract.fear_greed_api import fetch_fear_greed_index, save_raw_json as save_fg_json
 from src.transform.market_data_transform import run_transform, save_processed_data
-from utils.logger import get_logger
+from src.utils.logger import get_logger
+from src.load.postgres_loader import load_market_data
 
 logger = get_logger(__name__)
 
@@ -39,9 +40,10 @@ def main():
         run_fear_greed()
         df = run_transform(["bitcoin", "ethereum"])
         save_processed_data(df)
+        load_market_data(df)
     except Exception as e:
         logger.exception("ETL pipeline failed")
-    raise
+        raise
 
 
 logger.info("ETL pipeline finished successfully")

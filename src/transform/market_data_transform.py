@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
-from utils.logger import get_logger
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -38,7 +38,7 @@ def transform_market_data(raw_data: dict) -> dict:
         "symbol": raw_data["symbol"],
         "name": raw_data["name"],
         "timestamp_utc": datetime.utcnow(),
-        "current_price_usd": market["current_price"]["usd"],
+        "price_usd": market["current_price"]["usd"],
         "market_cap_usd": market["market_cap"]["usd"],
         "total_volume_usd": market["total_volume"]["usd"],
         "circulating_supply": market["circulating_supply"],

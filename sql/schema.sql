@@ -1,9 +1,10 @@
 CREATE TABLE IF NOT EXISTS market_data (
-    coin TEXT NOT NULL,
+    coin_id TEXT NOT NULL,
     price_usd NUMERIC,
     volume_24h NUMERIC,
     market_cap NUMERIC,
-    collected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timestamp_utc TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    PRIMARY KEY (coin_id, timestamp_utc)
 );
 
 CREATE TABLE IF NOT EXISTS fear_greed_index (
