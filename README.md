@@ -50,6 +50,7 @@ CoinGecko and Fear & Greed Index API's (Raw Data JSON) → panda data frames →
 
 ### 1. Clone repository
 git clone git@github.com:Jack-McG496/crypto-portfolio.git
+
 cd crypto-market-etl
 
 ### 2. Create a virtual environment
