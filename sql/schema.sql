@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS market_data (
 CREATE TABLE IF NOT EXISTS fear_greed_index (
     value INTEGER,
     classification TEXT,
-    collected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timestamp_utc TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

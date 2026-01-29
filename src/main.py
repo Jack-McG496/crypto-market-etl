@@ -1,8 +1,12 @@
 from src.extract.coingecko_api import fetch_coin_market_data, save_raw_json
 from src.extract.fear_greed_api import fetch_fear_greed_index, save_raw_json as save_fg_json
 from src.transform.market_data_transform import run_transform, save_processed_data
+from src.transform.sentiment_transform import run_fear_greed_transform, save_fear_greed_processed_data
+from src.analytics.volatility_analysis import calculate_volatility_features
+from src.analytics.anomaly_detection import detect_anomalies
 from src.utils.logger import get_logger
 from src.load.postgres_loader import load_market_data
+from src.load.analytics_loader import load_analytics_data
 
 logger = get_logger(__name__)
 
@@ -38,9 +42,21 @@ def main():
     try:
         run_coingecko()
         run_fear_greed()
-        df = run_transform(["bitcoin", "ethereum"])
-        save_processed_data(df)
-        load_market_data(df)
+        market_df = run_transform(["bitcoin", "ethereum"])
+        save_processed_data(market_df)
+        load_market_data(market_df)
+
+        sentiment_df = run_fear_greed_transform()
+        save_fear_greed_processed_data(sentiment_df)
+
+        analytics_df = calculate_volatility_features(market_df)
+
+        market_df = detect_anomalies(
+            analytics_df,
+            sentiment_df["sentiment_score"]
+        )
+
+        load_analytics_data(market_df)
     except Exception as e:
         logger.exception("ETL pipeline failed")
         raise
