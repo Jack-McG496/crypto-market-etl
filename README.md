@@ -6,7 +6,7 @@ This project is a production-style data pipeline that ingests cryptocurrency mar
 The pipeline is designed to simulate a real-world risk monitoring system used by trading, risk, or analytics teams.
 
 ---
-##Business Problem
+## Business Problem
 
 Cryptocurrency markets are highly volatile and strongly influenced by market sentiment.
 Simple price tracking provides limited insight into risk events or abnormal behavior.
@@ -20,17 +20,30 @@ This project addresses the following questions:
 ---
 
 ## Architecture
-Extract → Transform → Analytics → Load
+External APIs
+   │
+Extract Layer
+   │
+Transform Layer
+   │
+Analytics Layer
+   │
+PostgreSQL
 
-The pipeline extracts data from:
+The pipeline:
 
-- **CoinGecko API** (prices, market cap, 24h volume)  
-- **Crypto Fear & Greed Index**  
+1. Ingests real-time crypto market data (price, volume, market metrics)
+2. Ingests sentiment data (Fear & Greed Index)
+3. Engineers volatility and return-based features
+4. Detects anomalies using rolling statistics
+5. Adjusts anomaly thresholds dynamically based on market sentiment
+6. Stores both raw data and analytical outputs in PostgreSQL
 
-It then transforms the data into a clean format and loads it into a Postgres warehouse with **idempotent upserts**.
-
-
-CoinGecko and Fear & Greed Index API's (Raw Data JSON) → panda data frames → Derived metrics → PostgreSQL DB
+This allows downstream use cases such as:
+- Risk alerts
+- Monitoring dashboards
+- Quantitative research
+- Model training datasets
 
 ### Features
 
@@ -41,17 +54,50 @@ CoinGecko and Fear & Greed Index API's (Raw Data JSON) → panda data frames →
 - Fully **Dockerized PostgreSQL** database for portability
 - Logging for debugging and pipeline monitoring
 
-### Core market fields:
-- coin_id 
-- current_price_usd
-- market_cap_usd
-- total_volume_usd 
-- circulating_supply price_change_24h_pct
-- timestamp (UTC)
+### Data Sources
+### Market Data
+- CoinGecko API
+- Metrics include:
+  - coin_id
+  - current_price_usd
+  - market_cap_usd
+  - total_volume_usd 
+  - circulating_supply price_change_24h_pct
+  - timestamp (UTC)
+
+### Sentiment Data
+- Fear & Greed Index API
+- Used to:
+  - Classify market sentiment
+  - Adjust anomaly detection
 
 ---
 
-## Tech Stack
+## Analytic Logic
+### Volatility Features
+
+For each asset:
+
+- Log or percentage returns
+- Rolling standard deviation
+- Z-score of returns
+
+### Anomaly Detection
+
+An observation is flagged as anomalous when:
+
+|z_score| > threshold
+
+The threshold is dynamically adjusted:
+- Extreme Fear → lower threshold (higher sensitivity)
+- Extreme Greed → moderately lower threshold
+- Neutral → standard threshold
+
+This reflects real-world risk behavior where sentiment amplifies volatility impact.
+
+---
+
+## Technology Stack
 - Python 3.11
 - Pandas
 - REST APIs
