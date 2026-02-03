@@ -1,8 +1,26 @@
 # Crypto Market ETL Pipeline
 
 ## Overview
-This project is a **Python-based** end-to-end ETL pipeline that extracts cryptocurrency market data
-(price, volume, market cap, sentiment, timestamp) from various API's, transforms it (cleaning, handling error values), loads it into a **PostgreSQL database**.
+This project is a production-style data pipeline that ingests cryptocurrency market data and market sentiment indicators, transforms them into analytical features, and detects abnormal volatility patterns across multiple crypto assets.
+
+The pipeline is designed to simulate a real-world risk monitoring system used by trading, risk, or analytics teams.
+
+---
+##Business Problem
+
+Cryptocurrency markets are highly volatile and strongly influenced by market sentiment.
+Simple price tracking provides limited insight into risk events or abnormal behavior.
+
+This project addresses the following questions:
+
+- When is price movement statistically abnormal, not just volatile?
+- How does market sentiment (Fear & Greed Index) influence volatility risk?
+- Can we detect early signals of extreme market conditions?
+
+---
+
+## Architecture
+Extract → Transform → Analytics → Load
 
 The pipeline extracts data from:
 
@@ -11,12 +29,8 @@ The pipeline extracts data from:
 
 It then transforms the data into a clean format and loads it into a Postgres warehouse with **idempotent upserts**.
 
----
 
-## Architecture
-Extract → Transform → Load
-
-CoinGecko and Fear & Greed Index API's (Raw Data JSON) → panda data frames → PostgreSQL DB
+CoinGecko and Fear & Greed Index API's (Raw Data JSON) → panda data frames → Derived metrics → PostgreSQL DB
 
 ### Features
 
