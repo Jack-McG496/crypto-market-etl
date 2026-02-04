@@ -50,7 +50,7 @@ def main():
         save_fear_greed_processed_data(sentiment_df)
 
         analytics_df = calculate_volatility_features(market_df)
-
+        analytics_df = [analytics_df, sentiment_df]
         market_df = detect_anomalies(
             analytics_df,
             sentiment_df["sentiment_score"]
