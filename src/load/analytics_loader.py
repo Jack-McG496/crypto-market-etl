@@ -25,6 +25,7 @@ def load_analytics_data(df):
         threshold,
         sentiment_score,
         sentiment_label,
+        is_anomalous,
         timestamp_utc
     )
     VALUES (%s, %s, %s, %s, %s, %s)
@@ -43,6 +44,7 @@ def load_analytics_data(df):
             row["threshold"],
             row["sentiment_score"],
             row["sentiment_label"],
+            row["is_anomalous"],
             row["timestamp_utc"]
         )
         for _, row in df.iterrows()

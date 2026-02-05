@@ -1,4 +1,3 @@
-import pandas as pd
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -14,6 +13,6 @@ def detect_anomalies(df, sentiment_score):
         threshold = 2.0
 
     df["is_anomalous"] = df["z_score"].abs() > threshold
-    df["threshold_used"] = threshold
+    df["threshold"] = threshold
     logger.info("End anomaly detection")
     return df
