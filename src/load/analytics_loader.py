@@ -19,7 +19,7 @@ def load_analytics_data(df):
         return
 
     insert_sql = """
-    INSERT INTO market_data (
+    INSERT INTO volatility_alerts (
         coin_id,
         z_score,
         threshold,
@@ -28,13 +28,14 @@ def load_analytics_data(df):
         is_anomalous,
         timestamp_utc
     )
-    VALUES (%s, %s, %s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
     ON CONFLICT (coin_id, timestamp_utc)
     DO UPDATE SET
         z_score = EXCLUDED.z_score,
         threshold = EXCLUDED.threshold,
-        sentiment_score = EXCLUDED.sentiment_score;
-        sentiment_label = EXCLUDED.sentiment_label;
+        sentiment_score = EXCLUDED.sentiment_score,
+        sentiment_label = EXCLUDED.sentiment_label,
+        is_anomalous = EXCLUDED.is_anomalous;
     """
 
     records = [

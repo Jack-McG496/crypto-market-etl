@@ -51,13 +51,10 @@ def main():
         save_fear_greed_processed_data(sentiment_df)
 
         analytics_df = calculate_volatility_features(market_df)
-        analytics_df = pd.merge_asof(analytics_df.sort_values("timestamp"),
-                                     sentiment_df.sort_values("timestamp"),
-                                     on="timestamp",
-                                     direction="backward")
         market_df = detect_anomalies(
             analytics_df,
-            sentiment_df["sentiment_score"]
+            sentiment_df["sentiment_score"],
+            sentiment_df["sentiment_label"]
         )
 
         load_analytics_data(market_df)
