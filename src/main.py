@@ -7,6 +7,7 @@ from src.analytics.anomaly_detection import detect_anomalies
 from src.utils.logger import get_logger
 from src.load.postgres_loader import load_market_data
 from src.load.analytics_loader import load_analytics_data
+import pandas as pd
 
 logger = get_logger(__name__)
 
@@ -50,12 +51,12 @@ def main():
         save_fear_greed_processed_data(sentiment_df)
 
         analytics_df = calculate_volatility_features(market_df)
-        sentiment_score = sentiment_df["sentiment_score"].iloc[-1]
         market_df = detect_anomalies(
             analytics_df,
-            sentiment_score
+            sentiment_df["sentiment_score"],
+            sentiment_df["sentiment_label"]
         )
-        logger.info("market_df:", market_df)
+
         load_analytics_data(market_df)
     except Exception as e:
         logger.exception("ETL pipeline failed")
