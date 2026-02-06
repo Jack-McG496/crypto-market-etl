@@ -4,23 +4,11 @@ import numpy as np
 logger = get_logger(__name__)
 
 
-def calculate_volatility_features(df, window: int = 24):
-    """
-    Calculate rolling volatility features and normalized returns (z-scores)
-    for each crypto asset.
-    """
+def calculate_volatility_features(df, window=24):
 
-    logger.info("Starting volatility feature calculation (window=%s)", window)
+    logger.info("Start volatility feature calculation")
 
-    # Validate input
-    required_cols = {"coin_id", "timestamp_utc", "price_usd"}
-
-    missing = required_cols - set(df.columns)
-    if missing:
-        raise ValueError(f"Missing required columns: {missing}")
-
-    # Ensure correct ordering
-    df = df.sort_values(["coin_id", "timestamp_utc"]).copy()
+    df = df.sort_values(["coin_id", "timestamp_utc"])
 
     # Returns
     df["returns"] = (
@@ -28,26 +16,34 @@ def calculate_volatility_features(df, window: int = 24):
           .pct_change()
     )
 
-    # Rolling volatility
+    # Rolling std (very permissive early)
     df["rolling_std"] = (
         df.groupby("coin_id")["returns"]
-          .rolling(window, min_periods=window)
+          .rolling(window, min_periods=2)
           .std()
           .reset_index(level=0, drop=True)
     )
 
-    # Prevent division by zero
-    df["rolling_std"] = df["rolling_std"].replace(0, np.nan)
+    # Fallback: global std per coin (bootstrap)
+    fallback_std = (
+        df.groupby("coin_id")["returns"]
+          .transform("std")
+    )
 
-    # Normalized returns
+    df["rolling_std"] = df["rolling_std"].fillna(fallback_std)
+
+    # Avoid zero division
+    df["rolling_std"] = df["rolling_std"].replace(0, None)
+
+    # Z-score
     df["z_score"] = df["returns"] / df["rolling_std"]
 
-    # Metadata
-    df["volatility_window"] = window
+    # Only drop rows with no returns
+    df = df.dropna(subset=["returns"])
 
     logger.info(
-        "Volatility feature calculation completed | window=%s",
-        window
+        f"Volatility features calculated: {len(df)} rows"
     )
 
     return df
+
