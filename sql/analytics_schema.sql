@@ -20,6 +20,6 @@ CREATE TABLE IF NOT EXISTS volatility_alerts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_volatility_alerts_anomalous
-ON analytics.volatility_alerts (is_anomalous, timestamp_utc);
+ON volatility_alerts (is_anomalous, timestamp_utc);
 
 
