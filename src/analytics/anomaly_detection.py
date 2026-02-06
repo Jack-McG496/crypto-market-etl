@@ -15,6 +15,6 @@ def detect_anomalies(df, sentiment_score):
         threshold = 3.0
 
     df["is_anomalous"] = df["z_score"].abs() > threshold
-    df["threshold"] = thresholdgit
+    df["threshold"] = threshold
     logger.info("End anomaly detection")
     return df
