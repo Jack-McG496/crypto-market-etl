@@ -125,7 +125,8 @@ pip install -r requirements.txt
 docker compose up -d
 
 ### 5. Apply Schema
-Get-Content sql/schema.sql | docker exec -i crypto_postgres psql -U crypto -d crypto_db
+1. Get-Content sql/schema.sql | docker exec -i crypto_postgres psql -U crypto -d crypto_db
+2. Get-Content sql/analytics_schema.sql | docker exec -i crypto_postgres psql -U crypto -d crypto_db
 
 ### 6. Run pipeline
 python -m src.main
@@ -138,6 +139,8 @@ python -m src.main
 ---
 
 ## Extending the Pipeline
-- Add more cryptocurrencies by passing their names to run_transform(["bitcoin", "ethereum", "dogecoin"])
-- Add new APIs or data points by creating new extract functions
-- Schedule ETL runs with cron or Windows Task Scheduler
+- Real-time streaming (Kafka)
+- Alert delivery (Slack / Email)
+- Visualization layer (Metabase / Superset)
+- Machine learning anomaly detection
+- Backtesting alert effectiveness
