@@ -1,17 +1,6 @@
-import psycopg2
 from psycopg2.extras import execute_batch
 import logging
-import os
-
-def get_connection():
-    return psycopg2.connect(
-        host=os.getenv("POSTGRES_HOST", "localhost"),
-        port=os.getenv("POSTGRES_PORT", 5432),
-        dbname=os.getenv("POSTGRES_DB", "crypto_db"),
-        user=os.getenv("POSTGRES_USER", "crypto"),
-        password=os.getenv("POSTGRES_PASSWORD", "crypto")
-    )
-
+from src.utils.db import get_connection
 
 def load_market_data(df):
     if df.empty:

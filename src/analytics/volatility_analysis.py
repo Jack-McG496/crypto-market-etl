@@ -1,5 +1,6 @@
 from src.utils.logger import get_logger
 import numpy as np
+import pandas as pd
 
 logger = get_logger(__name__)
 
@@ -7,14 +8,21 @@ logger = get_logger(__name__)
 def calculate_volatility_features(df, window=24):
 
     logger.info("Start volatility feature calculation")
+    logger.info(f"Input rows: {len(df)}")
+
+    logger.info("Sample prices:")
+    logger.info(df[["coin_id", "timestamp_utc", "price_usd"]].head(10))
 
     df = df.sort_values(["coin_id", "timestamp_utc"])
 
     # Returns
+    df["price_usd"] = pd.to_numeric(df["price_usd"], errors="coerce")
     df["returns"] = (
         df.groupby("coin_id")["price_usd"]
           .pct_change()
     )
+    logger.info("Returns sample:")
+    logger.info(df[["coin_id", "returns"]].head(10))
 
     # Rolling std (very permissive early)
     df["rolling_std"] = (
@@ -23,6 +31,16 @@ def calculate_volatility_features(df, window=24):
           .std()
           .reset_index(level=0, drop=True)
     )
+
+    if df["returns"].isna().all():
+        logger.warning("Cold start: insufficient data for volatility")
+
+        df["returns"] = 0
+        df["rolling_std"] = 1
+        df["z_score"] = 0
+
+    logger.info("Rolling std sample:")
+    logger.info(df[["coin_id", "rolling_std"]].head(10))
 
     # Fallback: global std per coin (bootstrap)
     fallback_std = (
