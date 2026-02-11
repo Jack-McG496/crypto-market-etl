@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
 from src.utils.logger import get_logger
+import os
 
 logger = get_logger(__name__)
 
@@ -28,7 +29,16 @@ def fetch_coin_market_data(coin_id: str):
     logger.info(f"Fetching CoinGecko market data for {coin_id}")
 
     try:
-        response = requests.get(url, params=params, timeout=10)
+        headers = {
+            "x-cg-pro-api-key": os.getenv("COINGECKO_API_KEY")
+        }
+
+        response = requests.get(
+            url,
+            params=params,
+            headers=headers,
+            timeout=30
+        )
         response.raise_for_status()
     except requests.exceptions.Timeout:
         logger.error("Timeout while fetching CoinGecko market data for {coin_id}")

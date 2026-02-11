@@ -8,6 +8,8 @@ from src.utils.logger import get_logger
 from src.load.postgres_loader import load_market_data
 from src.load.analytics_loader import load_analytics_data
 import pandas as pd
+from dotenv import load_dotenv
+load_dotenv()
 
 logger = get_logger(__name__)
 

@@ -1,6 +1,8 @@
 from src.extract.coingecko_history import backfill_coins
 from src.load.history_loader import load_historical_data
 from src.utils.logger import get_logger
+from dotenv import load_dotenv
+load_dotenv()
 
 logger = get_logger(__name__)
 
