@@ -21,8 +21,7 @@ def fetch_historical_prices(coin_id, days=90):
 
     params = {
         "vs_currency": "usd",
-        "days": days,
-        "interval": "hourly"
+        "days": days
     }
 
     headers = {
@@ -35,6 +34,10 @@ def fetch_historical_prices(coin_id, days=90):
         headers=headers,
         timeout=30
     )
+
+    print("Status:", response.status_code)
+    print("Response:", response.text[:500])  # debug
+
     response.raise_for_status()
 
     data = response.json()

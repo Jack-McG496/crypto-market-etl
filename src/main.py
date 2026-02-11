@@ -43,30 +43,42 @@ def main():
     logger.info("ETL pipeline started")
 
     try:
+        # Extract
         run_coingecko()
         run_fear_greed()
+
+        # Transform
         market_df = run_transform(["bitcoin", "ethereum"])
         save_processed_data(market_df)
-        load_market_data(market_df)
 
         sentiment_df = run_fear_greed_transform()
         save_fear_greed_processed_data(sentiment_df)
 
+        # Load base market
+        load_market_data(market_df)
+
+        # Analytics
         analytics_df = calculate_volatility_features(market_df)
 
         sentiment_score = sentiment_df["sentiment_score"].iloc[-1]
         sentiment_label = sentiment_df["sentiment_label"].iloc[-1]
 
-        market_df = detect_anomalies(
+        alerts_df = detect_anomalies(
             analytics_df,
             sentiment_score,
             sentiment_label
         )
 
-        load_analytics_data(market_df)
-    except Exception as e:
+        # Load alerts
+        load_analytics_data(alerts_df)
+
+        logger.info("ETL pipeline finished successfully")
+
+    except Exception:
         logger.exception("ETL pipeline failed")
         raise
+
+
 
 
 logger.info("ETL pipeline finished successfully")
