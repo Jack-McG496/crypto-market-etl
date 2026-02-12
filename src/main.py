@@ -7,7 +7,8 @@ from src.analytics.anomaly_detection import detect_anomalies
 from src.utils.logger import get_logger
 from src.load.postgres_loader import load_market_data
 from src.load.analytics_loader import load_analytics_data
-import pandas as pd
+from src.analytics.data_loader import load_price_history
+from src.backfill import main as run_backfill
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -37,31 +38,39 @@ def run_fear_greed():
     except Exception:
         logger.error("Failed to fetch Fear & Greed Index")
 
-logger.info("Fear & Greed extraction completed")
+    logger.info("Fear & Greed extraction completed")
 
 def main():
     logger.info("ETL pipeline started")
 
     try:
-        # Extract
+        # 0. Backfill (run once or scheduled)
+        RUN_BACKFILL = False
+        if RUN_BACKFILL:
+            run_backfill()
+
+        # 1. Extract
         run_coingecko()
         run_fear_greed()
 
-        # Transform
+        # 2. Load snapshot
         market_df = run_transform(["bitcoin", "ethereum"])
         save_processed_data(market_df)
-
-        sentiment_df = run_fear_greed_transform()
-        save_fear_greed_processed_data(sentiment_df)
-
-        # Load base market
+        ## Load base market snapshot into DB
         load_market_data(market_df)
 
-        # Analytics
-        analytics_df = calculate_volatility_features(market_df)
+        # 3. Transform sentiment
+        sentiment_df = run_fear_greed_transform()
+        ## Save sentiment to csv (for history)
+        save_fear_greed_processed_data(sentiment_df)
 
         sentiment_score = sentiment_df["sentiment_score"].iloc[-1]
         sentiment_label = sentiment_df["sentiment_label"].iloc[-1]
+
+        # 4. Analytics from DB
+        price_df = load_price_history(days=90)
+
+        analytics_df = calculate_volatility_features(price_df)
 
         alerts_df = detect_anomalies(
             analytics_df,
@@ -69,7 +78,7 @@ def main():
             sentiment_label
         )
 
-        # Load alerts
+        # 5. Store alerts
         load_analytics_data(alerts_df)
 
         logger.info("ETL pipeline finished successfully")

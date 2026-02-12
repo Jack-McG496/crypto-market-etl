@@ -5,7 +5,7 @@ import pandas as pd
 logger = get_logger(__name__)
 
 
-def calculate_volatility_features(df, window=24):
+def calculate_volatility_features(df, window=48):
 
     logger.info("Start volatility feature calculation")
     logger.info(f"Input rows: {len(df)}")
@@ -57,7 +57,7 @@ def calculate_volatility_features(df, window=24):
     df["z_score"] = df["returns"] / df["rolling_std"]
 
     # Only drop rows with no returns
-    df = df.dropna(subset=["returns"])
+    df = df.dropna(subset=["returns", "rolling_std"])
 
     logger.info(
         f"Volatility features calculated: {len(df)} rows"
