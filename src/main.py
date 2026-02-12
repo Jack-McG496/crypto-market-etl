@@ -9,8 +9,11 @@ from src.load.postgres_loader import load_market_data
 from src.load.analytics_loader import load_analytics_data
 from src.analytics.data_loader import load_price_history
 from src.backfill import main as run_backfill
+import os
 from dotenv import load_dotenv
 load_dotenv()
+
+RUN_BACKFILL = os.getenv("RUN_BACKFILL") == "true"
 
 logger = get_logger(__name__)
 
@@ -45,7 +48,6 @@ def main():
 
     try:
         # 0. Backfill (run once or scheduled)
-        RUN_BACKFILL = False
         if RUN_BACKFILL:
             run_backfill()
 
@@ -86,11 +88,6 @@ def main():
     except Exception:
         logger.exception("ETL pipeline failed")
         raise
-
-
-
-
-logger.info("ETL pipeline finished successfully")
 
 if __name__ == "__main__":
     main()
