@@ -9,6 +9,7 @@ from src.load.postgres_loader import load_market_data
 from src.load.analytics_loader import load_analytics_data
 import pandas as pd
 from dotenv import load_dotenv
+from src.analytics.data_loader import load_price_history
 load_dotenv()
 
 logger = get_logger(__name__)
@@ -57,17 +58,24 @@ def main():
         # Load base market
         load_market_data(market_df)
 
-        # Analytics
-        analytics_df = calculate_volatility_features(market_df)
+        # Load historical prices from DB
+        price_df = load_price_history(days=90)
+
+        analytics_df = calculate_volatility_features(price_df)
 
         sentiment_score = sentiment_df["sentiment_score"].iloc[-1]
         sentiment_label = sentiment_df["sentiment_label"].iloc[-1]
+
+        logger.info(f"Rows entering anomaly detection: {len(analytics_df)}")
 
         alerts_df = detect_anomalies(
             analytics_df,
             sentiment_score,
             sentiment_label
         )
+
+        logger.info(f"Analytics rows produced: {len(alerts_df)}")
+        logger.info(f"Analytics columns: {alerts_df.columns.tolist()}")
 
         # Load alerts
         load_analytics_data(alerts_df)

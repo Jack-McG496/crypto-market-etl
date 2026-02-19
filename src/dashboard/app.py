@@ -2,12 +2,16 @@ import streamlit as st
 import pandas as pd
 import psycopg2
 import os
+from dotenv import load_dotenv
+import plotly.express as px
 
+load_dotenv()
 
-# -----------------------
-# DB Connection
-# -----------------------
+st.set_page_config(page_title="Crypto Volatility Monitor", layout="wide")
 
+# -----------------------------
+# DB CONNECTION
+# -----------------------------
 def get_connection():
     return psycopg2.connect(
         host=os.getenv("POSTGRES_HOST", "localhost"),
@@ -18,119 +22,146 @@ def get_connection():
     )
 
 
-# -----------------------
-# Load Data
-# -----------------------
-
 @st.cache_data(ttl=60)
 def load_data():
-
-    query = """
-    SELECT
-        coin_id,
-        z_score,
-        threshold,
-        sentiment_score,
-        sentiment_label,
-        is_anomalous,
-        timestamp_utc
-    FROM volatility_alerts
-    ORDER BY timestamp_utc DESC
-    LIMIT 5000;
-    """
-
     conn = get_connection()
 
-    df = pd.read_sql(query, conn)
+    market_query = """
+        SELECT *
+        FROM market_data
+        ORDER BY timestamp_utc;
+    """
+
+    alerts_query = """
+        SELECT *
+        FROM volatility_alerts
+        ORDER BY timestamp_utc;
+    """
+
+    market_df = pd.read_sql(market_query, conn)
+    alerts_df = pd.read_sql(alerts_query, conn)
 
     conn.close()
 
-    return df
+    market_df["timestamp_utc"] = pd.to_datetime(market_df["timestamp_utc"])
+    alerts_df["timestamp_utc"] = pd.to_datetime(alerts_df["timestamp_utc"])
+
+    return market_df, alerts_df
 
 
-# -----------------------
-# App UI
-# -----------------------
+market_df, alerts_df = load_data()
 
-st.set_page_config(
-    page_title="Crypto Volatility Monitor",
-    layout="wide"
+# -----------------------------
+# SIDEBAR
+# -----------------------------
+coins = market_df["coin_id"].unique()
+
+selected_coin = st.sidebar.selectbox(
+    "Select Coin",
+    coins
 )
 
-st.title("📊 Crypto Volatility Monitoring Dashboard")
+# filter data
+market = market_df[market_df["coin_id"] == selected_coin]
+alerts = alerts_df[alerts_df["coin_id"] == selected_coin]
 
-df = load_data()
+# -----------------------------
+# TITLE
+# -----------------------------
+st.title("📈 Crypto Volatility Monitoring Dashboard")
 
+# -----------------------------
+# PRICE CHART
+# -----------------------------
+st.subheader("Price (USD)")
 
-# -----------------------
-# Sidebar Filters
-# -----------------------
-
-st.sidebar.header("Filters")
-
-coins = st.sidebar.multiselect(
-    "Select Coins",
-    options=df["coin_id"].unique(),
-    default=df["coin_id"].unique()
+fig_price = px.line(
+    market,
+    x="timestamp_utc",
+    y="price_usd",
 )
 
-show_anomalies = st.sidebar.checkbox(
-    "Show Only Anomalies",
-    value=False
+st.plotly_chart(fig_price, use_container_width=True)
+
+# -----------------------------
+# Z-SCORE CHART
+# -----------------------------
+st.subheader("Volatility Z-Score")
+
+fig_z = px.line(
+    alerts,
+    x="timestamp_utc",
+    y="z_score",
 )
 
-
-filtered = df[df["coin_id"].isin(coins)]
-
-if show_anomalies:
-    filtered = filtered[filtered["is_anomalous"] == True]
-
-
-# -----------------------
-# Metrics
-# -----------------------
-
-col1, col2, col3 = st.columns(3)
-
-col1.metric(
-    "Total Records",
-    len(filtered)
+fig_z.add_hline(
+    y=alerts["threshold"].iloc[-1],
+    line_dash="dash"
 )
 
-col2.metric(
-    "Anomalies",
-    filtered["is_anomalous"].sum()
+fig_z.add_hline(
+    y=-alerts["threshold"].iloc[-1],
+    line_dash="dash"
 )
 
-col3.metric(
-    "Avg Z-Score",
-    round(filtered["z_score"].mean(), 2)
+# highlight anomalies
+anomalies = alerts[alerts["is_anomalous"] == True]
+
+fig_z.add_scatter(
+    x=anomalies["timestamp_utc"],
+    y=anomalies["z_score"],
+    mode="markers",
+    name="Anomaly",
 )
 
+st.plotly_chart(fig_z, use_container_width=True)
 
-# -----------------------
-# Table
-# -----------------------
+# -----------------------------
+# Multi-Coin Comparison
+# -----------------------------
+st.subheader("Comparison")
 
-st.subheader("Alert Records")
-
-st.dataframe(
-    filtered,
-    use_container_width=True
+fig_compare = px.line(
+    alerts_df,
+    x="timestamp_utc",
+    y="z_score",
+    color="coin_id"
 )
 
+st.plotly_chart(fig_compare, use_container_width=True)
 
-# -----------------------
-# Charts
-# -----------------------
+# -----------------------------
+# Recent Alerts Panel
+# -----------------------------
+recent_alerts = alerts_df[
+    alerts_df["is_anomalous"] == True
+].sort_values("timestamp_utc", ascending=False).head(10)
 
-st.subheader("Z-Score Over Time")
+st.subheader("🚨 Recent Volatility Alerts")
+st.dataframe(recent_alerts)
 
-for coin in coins:
 
-    coin_df = filtered[filtered["coin_id"] == coin]
+# -----------------------------
+# SENTIMENT PANEL
+# -----------------------------
+if not alerts.empty:
+    latest = alerts.iloc[-1]
 
-    st.line_chart(
-        coin_df.set_index("timestamp_utc")["z_score"],
-        height=300
-    )
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("Sentiment Score", latest["sentiment_score"])
+    col2.metric("Sentiment Label", latest["sentiment_label"])
+    col3.metric("Threshold Used", latest["threshold"])
+
+    latest_z = latest["z_score"]
+
+    if abs(latest_z) > latest["threshold"]:
+        st.error("⚠️ Market in abnormal volatility regime")
+    else:
+        st.success("✅ Market volatility normal")
+
+# -----------------------------
+# RAW DATA VIEW
+# -----------------------------
+with st.expander("View Latest Alerts"):
+    st.dataframe(alerts.tail(50))
