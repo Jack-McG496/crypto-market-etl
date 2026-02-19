@@ -10,32 +10,39 @@ def load_analytics_data(df):
     insert_sql = """
     INSERT INTO volatility_alerts (
         coin_id,
+        timestamp_utc,
+
+        returns,
+        rolling_std,
         z_score,
+
         threshold,
+
         sentiment_score,
         sentiment_label,
-        is_anomalous,
-        timestamp_utc
+
+        is_anomalous
     )
-    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
     ON CONFLICT (coin_id, timestamp_utc)
-    DO UPDATE SET
-        z_score = EXCLUDED.z_score,
-        threshold = EXCLUDED.threshold,
-        sentiment_score = EXCLUDED.sentiment_score,
-        sentiment_label = EXCLUDED.sentiment_label,
-        is_anomalous = EXCLUDED.is_anomalous;
+    DO NOTHING;
     """
 
     records = [
         (
             row["coin_id"],
+            row["timestamp_utc"],
+
+            row["returns"],
+            row["rolling_std"],
             row["z_score"],
+
             row["threshold"],
+
             row["sentiment_score"],
             row["sentiment_label"],
-            row["is_anomalous"],
-            row["timestamp_utc"]
+
+            row["is_anomalous"]
         )
         for _, row in df.iterrows()
     ]

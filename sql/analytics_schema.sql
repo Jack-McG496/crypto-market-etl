@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS volatility_alerts (
 
     -- Alert decision
     is_anomalous BOOLEAN NOT NULL,
+    returns NUMERIC,
+    rolling_std NUMERIC;
 
     -- Metadata
     timestamp_utc TIMESTAMP NOT NULL,
