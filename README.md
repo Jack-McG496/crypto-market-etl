@@ -1,9 +1,9 @@
-# Crypto Market ETL Pipeline
+# Crypto Volatility Monitoring Pipeline
 
 ## Overview
-This project is a production-style data pipeline that ingests cryptocurrency market data and market sentiment indicators, transforms them into analytical features, and detects abnormal volatility patterns across multiple crypto assets.
 
-The pipeline is designed to simulate a real-world risk monitoring system used by trading, risk, or analytics teams.
+A data pipeline that ingests cryptocurrency market data, computes rolling volatility indicators, detects abnormal market conditions 
+using statistical thresholds adjusted by sentiment data, and visualizes results through a live dashboard. 
 
 ---
 ## Business Problem
@@ -26,18 +26,23 @@ Extract Layer
    │
 Transform Layer
    │
-Analytics Layer
-   │
 PostgreSQL
+   │
+Analytics Engine
+   │
+Volatility Alerts
+   │
+Streamlit Dashboard
 
 The pipeline:
 
-1. Ingests real-time crypto market data (price, volume, market metrics)
+1. Ingests real-time crypto market data from CoinGecko API (price, volume, market metrics)
 2. Ingests sentiment data (Fear & Greed Index)
 3. Engineers volatility and return-based features
 4. Detects anomalies using rolling statistics
 5. Adjusts anomaly thresholds dynamically based on market sentiment
 6. Stores both raw data and analytical outputs in PostgreSQL
+7. Displays analytics through a live dashboard
 
 This allows downstream use cases such as:
 - Risk alerts
@@ -48,11 +53,15 @@ This allows downstream use cases such as:
 ### Features
 
 - Extraction of multiple coins with **dynamic fetch function**
-- Storage of raw JSON for reproducibility
-- Data transformation using **pandas**
-- Idempotent database inserts with **UPSERTs** on `(coin_id, timestamp)`  
 - Fully **Dockerized PostgreSQL** database for portability
-- Logging for debugging and pipeline monitoring
+- Historical backfill (90 days hourly data)
+- Incremental ingestion
+- Rolling volatility calculation
+- Z-score anomaly detection
+- Sentiment-aware thresholds
+- Persistent analytics store
+- Interactive dashboard
+- Scheduled execution
 
 ### Data Sources
 ### Market Data
@@ -100,9 +109,11 @@ This reflects real-world risk behavior where sentiment amplifies volatility impa
 ## Technology Stack
 - Python 3.11
 - Pandas
-- REST APIs
+- REST APIs (CoinGecko + Fear & Greed Index)
 - PostgreSQL (via Docker)  
 - Git
+- Streamlit + Plotly
+- Windows Task Scheduler
 
 ---
 
@@ -131,16 +142,18 @@ docker compose up -d
 ### 6. Run pipeline
 python -m src.main
 
-#### Expected output:
-1. Raw data: data/raw/
-2. Processed CSV: data/processed/market_data_<timestamp>.csv
-3. Logs: printed to console
+### Launch Dashboard
+streamlit run dashboard/app.py
+
+#### Example Dashboard
+
+![img.png](img.png)
 
 ---
 
-## Extending the Pipeline
+## Extending the Project
 - Real-time streaming (Kafka)
 - Alert delivery (Slack / Email)
-- Visualization layer (Metabase / Superset)
 - Machine learning anomaly detection
 - Backtesting alert effectiveness
+- Cloud Deployment

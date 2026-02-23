@@ -140,6 +140,37 @@ recent_alerts = alerts_df[
 st.subheader("🚨 Recent Volatility Alerts")
 st.dataframe(recent_alerts)
 
+# -----------------------------
+# Regime Timeline Chart
+# -----------------------------
+fig_regime = px.scatter(
+    alerts_df,
+    x="timestamp_utc",
+    y="coin_id",
+    color="volatility_regime",
+    title="Volatility Regime Timeline"
+)
+
+regime_colors = {
+    "CALM": "#d4edda",
+    "NORMAL": "#fff3cd",
+    "HIGH": "#ffe5b4",
+    "EXTREME": "#f8d7da",
+}
+
+for i in range(len(alerts_df) - 1):
+    regime = alerts_df["volatility_regime"].iloc[i]
+
+    fig_regime.add_vrect(
+        x0=alerts_df["timestamp_utc"].iloc[i],
+        x1=alerts_df["timestamp_utc"].iloc[i + 1],
+        fillcolor=regime_colors.get(regime, "white"),
+        opacity=0.25,
+        line_width=0,
+    )
+
+st.plotly_chart(fig_regime, use_container_width=True)
+
 
 # -----------------------------
 # SENTIMENT PANEL
@@ -153,12 +184,26 @@ if not alerts.empty:
     col2.metric("Sentiment Label", latest["sentiment_label"])
     col3.metric("Threshold Used", latest["threshold"])
 
+    st.subheader("Market Regime")
+
+    regime = latest["volatility_regime"]
+
+    if regime == "Calm":
+        st.success("🟢 Calm Market")
+    elif regime == "Elevated":
+        st.warning("🟡 Elevated Volatility")
+    elif regime == "High":
+        st.warning("🟠 High Volatility")
+    else:
+        st.error("🔴 Extreme Volatility")
+
     latest_z = latest["z_score"]
 
     if abs(latest_z) > latest["threshold"]:
         st.error("⚠️ Market in abnormal volatility regime")
     else:
         st.success("✅ Market volatility normal")
+
 
 # -----------------------------
 # RAW DATA VIEW

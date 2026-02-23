@@ -10,6 +10,8 @@ from src.load.analytics_loader import load_analytics_data
 import pandas as pd
 from dotenv import load_dotenv
 from src.analytics.data_loader import load_price_history
+from src.analytics.regime_detection import classify_volatility_regime
+
 load_dotenv()
 
 logger = get_logger(__name__)
@@ -73,6 +75,8 @@ def main():
             sentiment_score,
             sentiment_label
         )
+
+        alerts_df = classify_volatility_regime(alerts_df)
 
         logger.info(f"Analytics rows produced: {len(alerts_df)}")
         logger.info(f"Analytics columns: {alerts_df.columns.tolist()}")
