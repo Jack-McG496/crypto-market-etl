@@ -42,7 +42,9 @@ The pipeline:
 4. Detects anomalies using rolling statistics
 5. Adjusts anomaly thresholds dynamically based on market sentiment
 6. Stores both raw data and analytical outputs in PostgreSQL
-7. Displays analytics through a live dashboard
+7. Creates alerts based on key changes in sentiment, regime or volatility
+8. Displays analytics through a live dashboard
+
 
 This allows downstream use cases such as:
 - Risk alerts
@@ -62,6 +64,7 @@ This allows downstream use cases such as:
 - Persistent analytics store
 - Interactive dashboard
 - Scheduled execution
+- Slack notification alerts
 
 ### Data Sources
 ### Market Data
@@ -120,30 +123,37 @@ This reflects real-world risk behavior where sentiment amplifies volatility impa
 ## Setup Instructions
 
 ### 1. Clone repository
+```bash
 git clone git@github.com:Jack-McG496/crypto-portfolio.git
 
 cd crypto-market-etl
-
+```
 ### 2. Create a virtual environment
-1. python -m venv venv 
-2. venv\Scripts\activate      # Windows
-3. source venv/bin/activate   # Mac/Linux
-
+```bash
+python -m venv venv 
+venv\Scripts\activate      # Windows
+source venv/bin/activate   # Mac/Linux
+```
 ### 3. Install Dependencies
+```bash
 pip install -r requirements.txt
-
+```
 ### 4. Start PostgreSQL with Docker
+```bash
 docker compose up -d
-
+```
 ### 5. Apply Schema
-1. Get-Content sql/schema.sql | docker exec -i crypto_postgres psql -U crypto -d crypto_db
-
+```bash
+Get-Content sql/schema.sql | docker exec -i crypto_postgres psql -U crypto -d crypto_db
+```
 ### 6. Run pipeline
+```bash
 python -m src.main
-
+```
 ### Launch Dashboard
+```bash
 streamlit run dashboard/app.py
-
+```
 #### Example Dashboard
 
 ![img.png](img.png)
