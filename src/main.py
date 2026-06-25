@@ -8,6 +8,7 @@ from src.utils.logger import get_logger
 from src.load.postgres_loader import load_market_data
 from src.load.analytics_loader import load_analytics_data
 from src.analytics.data_loader import load_price_history
+from src.alerts.alert_engine import generate_alerts
 from src.backfill import main as run_backfill
 import os
 from dotenv import load_dotenv
@@ -72,16 +73,19 @@ def main():
         # 4. Analytics from DB
         price_df = load_price_history(days=90)
 
-        analytics_df = calculate_volatility_features(price_df)
+        analysis_df = calculate_volatility_features(price_df)
 
-        alerts_df = detect_anomalies(
-            analytics_df,
+        analytics_df = detect_anomalies(
+            analysis_df,
             sentiment_score,
             sentiment_label
         )
 
-        # 5. Store alerts
-        load_analytics_data(alerts_df)
+        # 5. Store analytics
+        load_analytics_data(analytics_df)
+
+        # 6. Generate Alerts
+        generate_alerts(analytics_df)
 
         logger.info("ETL pipeline finished successfully")
 

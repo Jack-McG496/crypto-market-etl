@@ -47,6 +47,23 @@ def load_data():
 
     return df
 
+def alert_date():
+
+    query= """
+    SELECT *
+    FROM alerts
+    ORDER BY created_at DESC
+    LIMIT 100;
+    """
+
+    conn = get_connection()
+
+    alert_df = pd.read_sql(query, conn)
+
+    conn.close()
+
+    return alert_df
+
 
 # -----------------------
 # App UI
@@ -60,6 +77,7 @@ st.set_page_config(
 st.title("📊 Crypto Volatility Monitoring Dashboard")
 
 df = load_data()
+alert_df = alert_date()
 
 
 # -----------------------
@@ -112,12 +130,16 @@ col3.metric(
 # Table
 # -----------------------
 
-st.subheader("Alert Records")
+st.subheader("Analytics Records")
 
 st.dataframe(
     filtered,
     use_container_width=True
 )
+
+st.subheader("Recent Alerts")
+
+st.dataframe(alert_df)
 
 
 # -----------------------
@@ -134,3 +156,4 @@ for coin in coins:
         coin_df.set_index("timestamp_utc")["z_score"],
         height=300
     )
+
