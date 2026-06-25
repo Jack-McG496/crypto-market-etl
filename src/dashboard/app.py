@@ -141,12 +141,23 @@ st.plotly_chart(fig_compare, use_container_width=True)
 # -----------------------------
 # Recent Alerts Panel
 # -----------------------------
-recent_analytics = analytics_df[
-    analytics_df["is_anomalous"] == True
-].sort_values("timestamp_utc", ascending=False).head(10)
-
-st.subheader("🚨 Recent Volatility Alerts")
+st.subheader("🚨 Recent Alerts")
 st.dataframe(alert_df)
+
+alert_count = pd.DataFrame
+# Alert count by type
+alert_count["volatillity_alerts_count"] = len(alert_df[alert_df["alert_type"] == "VOLATILITY"])
+alert_count["regime_alerts_count"] = len(alert_df[alert_df["alert_type"] == "REGIME_CHANGE"])
+alert_count["sentiment_alerts_count"] = len(alert_df[alert_df["alert_type"] == "SENTIMENT"])
+# Alert count by severity
+alert_count["info_alerts_count"] = len(alert_df[alert_df["severity"] == "INFO"])
+alert_count["warning_alerts_count"] = len(alert_df[alert_df["severity"] == "WARNING"])
+alert_count["critical_alerts_count"] = len(alert_df[alert_df["severity"] == "CRITICAL"])
+# Alert count by coin
+alert_count["btc_alerts_count"]  = len(alert_df[alert_df["coin_id"] == "BTC"])
+alert_count["eth_alerts_count"]  = len(alert_df[alert_df["coin_id"] == "ETH"])
+
+st.dataframe(alert_count)
 
 # -----------------------------
 # Regime Timeline Chart
