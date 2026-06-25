@@ -7,6 +7,8 @@ from src.analytics.anomaly_detection import detect_anomalies
 from src.utils.logger import get_logger
 from src.load.postgres_loader import load_market_data
 from src.load.analytics_loader import load_analytics_data
+from src.alerts.alert_engine import generate_alerts
+from src.load.alerts_loader import load_alert_data
 import pandas as pd
 from dotenv import load_dotenv
 from src.analytics.data_loader import load_price_history
@@ -70,19 +72,24 @@ def main():
 
         logger.info(f"Rows entering anomaly detection: {len(analytics_df)}")
 
-        alerts_df = detect_anomalies(
+        analytics_anomaly_df = detect_anomalies(
             analytics_df,
             sentiment_score,
             sentiment_label
         )
 
-        alerts_df = classify_volatility_regime(alerts_df)
+        analytics_anomaly_df = classify_volatility_regime(analytics_anomaly_df)
 
-        logger.info(f"Analytics rows produced: {len(alerts_df)}")
-        logger.info(f"Analytics columns: {alerts_df.columns.tolist()}")
+        logger.info(f"Analytics rows produced: {len(analytics_anomaly_df)}")
+        logger.info(f"Analytics columns: {analytics_anomaly_df.columns.tolist()}")
 
+        # Load analytics
+        load_analytics_data(analytics_anomaly_df)
+
+        alerts_df = generate_alerts(analytics_anomaly_df)
         # Load alerts
-        load_analytics_data(alerts_df)
+        load_alert_data(alerts_df)
+
 
         logger.info("ETL pipeline finished successfully")
 

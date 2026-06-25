@@ -32,24 +32,32 @@ def load_data():
         ORDER BY timestamp_utc;
     """
 
-    alerts_query = """
+    analytics_query = """
         SELECT *
         FROM volatility_alerts
         ORDER BY timestamp_utc;
     """
 
+    alert_query = """
+        SELECT *
+        FROM alerts
+        ORDER BY created_at DESC
+        LIMIT 100;
+    """
+
     market_df = pd.read_sql(market_query, conn)
-    alerts_df = pd.read_sql(alerts_query, conn)
+    analytics_df = pd.read_sql(analytics_query, conn)
+    alert_df = pd.read_sql(alert_query, conn)
 
     conn.close()
 
     market_df["timestamp_utc"] = pd.to_datetime(market_df["timestamp_utc"])
-    alerts_df["timestamp_utc"] = pd.to_datetime(alerts_df["timestamp_utc"])
+    analytics_df["timestamp_utc"] = pd.to_datetime(analytics_df["timestamp_utc"])
 
-    return market_df, alerts_df
+    return market_df, analytics_df, alert_df
 
 
-market_df, alerts_df = load_data()
+market_df, analytics_df, alert_df = load_data()
 
 # -----------------------------
 # SIDEBAR
@@ -63,7 +71,7 @@ selected_coin = st.sidebar.selectbox(
 
 # filter data
 market = market_df[market_df["coin_id"] == selected_coin]
-alerts = alerts_df[alerts_df["coin_id"] == selected_coin]
+analytics = analytics_df[analytics_df["coin_id"] == selected_coin]
 
 # -----------------------------
 # TITLE
@@ -89,23 +97,23 @@ st.plotly_chart(fig_price, use_container_width=True)
 st.subheader("Volatility Z-Score")
 
 fig_z = px.line(
-    alerts,
+    analytics,
     x="timestamp_utc",
     y="z_score",
 )
 
 fig_z.add_hline(
-    y=alerts["threshold"].iloc[-1],
+    y=analytics["threshold"].iloc[-1],
     line_dash="dash"
 )
 
 fig_z.add_hline(
-    y=-alerts["threshold"].iloc[-1],
+    y=-analytics["threshold"].iloc[-1],
     line_dash="dash"
 )
 
 # highlight anomalies
-anomalies = alerts[alerts["is_anomalous"] == True]
+anomalies = analytics[analytics["is_anomalous"] == True]
 
 fig_z.add_scatter(
     x=anomalies["timestamp_utc"],
@@ -122,7 +130,7 @@ st.plotly_chart(fig_z, use_container_width=True)
 st.subheader("Comparison")
 
 fig_compare = px.line(
-    alerts_df,
+    analytics_df,
     x="timestamp_utc",
     y="z_score",
     color="coin_id"
@@ -133,18 +141,18 @@ st.plotly_chart(fig_compare, use_container_width=True)
 # -----------------------------
 # Recent Alerts Panel
 # -----------------------------
-recent_alerts = alerts_df[
-    alerts_df["is_anomalous"] == True
+recent_analytics = analytics_df[
+    analytics_df["is_anomalous"] == True
 ].sort_values("timestamp_utc", ascending=False).head(10)
 
 st.subheader("🚨 Recent Volatility Alerts")
-st.dataframe(recent_alerts)
+st.dataframe(alert_df)
 
 # -----------------------------
 # Regime Timeline Chart
 # -----------------------------
 fig_regime = px.scatter(
-    alerts_df,
+    analytics_df,
     x="timestamp_utc",
     y="coin_id",
     color="volatility_regime",
@@ -158,12 +166,12 @@ regime_colors = {
     "EXTREME": "#f8d7da",
 }
 
-for i in range(len(alerts_df) - 1):
-    regime = alerts_df["volatility_regime"].iloc[i]
+for i in range(len(analytics_df) - 1):
+    regime = analytics_df["volatility_regime"].iloc[i]
 
     fig_regime.add_vrect(
-        x0=alerts_df["timestamp_utc"].iloc[i],
-        x1=alerts_df["timestamp_utc"].iloc[i + 1],
+        x0=analytics_df["timestamp_utc"].iloc[i],
+        x1=analytics_df["timestamp_utc"].iloc[i + 1],
         fillcolor=regime_colors.get(regime, "white"),
         opacity=0.25,
         line_width=0,
@@ -175,8 +183,8 @@ st.plotly_chart(fig_regime, use_container_width=True)
 # -----------------------------
 # SENTIMENT PANEL
 # -----------------------------
-if not alerts.empty:
-    latest = alerts.iloc[-1]
+if not analytics.empty:
+    latest = analytics.iloc[-1]
 
     col1, col2, col3 = st.columns(3)
 
@@ -209,4 +217,4 @@ if not alerts.empty:
 # RAW DATA VIEW
 # -----------------------------
 with st.expander("View Latest Alerts"):
-    st.dataframe(alerts.tail(50))
+    st.dataframe(analytics.tail(50))
