@@ -7,14 +7,12 @@ from src.analytics.anomaly_detection import detect_anomalies
 from src.utils.logger import get_logger
 from src.load.postgres_loader import load_market_data
 from src.load.analytics_loader import load_analytics_data
-from src.analytics.data_loader import load_price_history
-from src.alerts.alert_engine import generate_alerts
-from src.backfill import main as run_backfill
-import os
+import pandas as pd
 from dotenv import load_dotenv
-load_dotenv()
+from src.analytics.data_loader import load_price_history
+from src.analytics.regime_detection import classify_volatility_regime
 
-RUN_BACKFILL = os.getenv("RUN_BACKFILL") == "true"
+load_dotenv()
 
 logger = get_logger(__name__)
 
@@ -42,56 +40,60 @@ def run_fear_greed():
     except Exception:
         logger.error("Failed to fetch Fear & Greed Index")
 
-    logger.info("Fear & Greed extraction completed")
+logger.info("Fear & Greed extraction completed")
 
 def main():
     logger.info("ETL pipeline started")
 
     try:
-        # 0. Backfill (run once or scheduled)
-        if RUN_BACKFILL:
-            run_backfill()
-
-        # 1. Extract
+        # Extract
         run_coingecko()
         run_fear_greed()
 
-        # 2. Load snapshot
+        # Transform
         market_df = run_transform(["bitcoin", "ethereum"])
         save_processed_data(market_df)
-        ## Load base market snapshot into DB
+
+        sentiment_df = run_fear_greed_transform()
+        save_fear_greed_processed_data(sentiment_df)
+
+        # Load base market
         load_market_data(market_df)
 
-        # 3. Transform sentiment
-        sentiment_df = run_fear_greed_transform()
-        ## Save sentiment to csv (for history)
-        save_fear_greed_processed_data(sentiment_df)
+        # Load historical prices from DB
+        price_df = load_price_history(days=90)
+
+        analytics_df = calculate_volatility_features(price_df)
 
         sentiment_score = sentiment_df["sentiment_score"].iloc[-1]
         sentiment_label = sentiment_df["sentiment_label"].iloc[-1]
 
-        # 4. Analytics from DB
-        price_df = load_price_history(days=90)
+        logger.info(f"Rows entering anomaly detection: {len(analytics_df)}")
 
-        analysis_df = calculate_volatility_features(price_df)
-
-        analytics_df = detect_anomalies(
-            analysis_df,
+        alerts_df = detect_anomalies(
+            analytics_df,
             sentiment_score,
             sentiment_label
         )
 
-        # 5. Store analytics
-        load_analytics_data(analytics_df)
+        alerts_df = classify_volatility_regime(alerts_df)
 
-        # 6. Generate Alerts
-        generate_alerts(analytics_df)
+        logger.info(f"Analytics rows produced: {len(alerts_df)}")
+        logger.info(f"Analytics columns: {alerts_df.columns.tolist()}")
+
+        # Load alerts
+        load_analytics_data(alerts_df)
 
         logger.info("ETL pipeline finished successfully")
 
     except Exception:
         logger.exception("ETL pipeline failed")
         raise
+
+
+
+
+logger.info("ETL pipeline finished successfully")
 
 if __name__ == "__main__":
     main()
