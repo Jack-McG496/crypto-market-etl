@@ -1,14 +1,82 @@
 import pandas as pd
 
 def generate_alerts(df):
-    filtered_df = df[df["is_anomalous"] == True]
-    alert_df = pd.DataFrame()
-    for ele in filtered_df:
 
-        alert_df["coin_id"] = ele["coin_id"]
-        alert_df["alert_type"] = "VOLATILITY"
-        alert_df["severity"] = "WARNING"
-        alert_df["message"] = "BTC volatility exceeded threshold" if ele["coin_id"] == "BTC" else "ETH volatility exceeded threshold"
-        alert_df["analytics_timestamp"] = ele["timestamp_utc"]
+    alerts = []
 
-    return alert_df
+    # Volatility alerts
+    anomalous = df[df["is_anomalous"] == True]
+
+    for _, row in anomalous.iterrows():
+
+        alerts.append({
+            "coin_id": row["coin_id"],
+            "alert_type": "VOLATILITY",
+            "severity": "WARNING",
+            "message": f"{row['coin_id']} volatility exceeded threshold",
+            "analytics_timestamp": row["timestamp_utc"]
+        })
+
+    # Regime alerts
+    df = df.sort_values(["coin_id", "timestamp_utc"])
+
+    df["previous_regime"] = (
+        df.groupby("coin_id")["volatility_regime"]
+            .shift(1)
+    )
+
+    regime_changes = df[
+        (df["previous_regime"].notna()) &
+        (df["previous_regime"] != df["volatility_regime"])
+        ]
+
+    for _, row in regime_changes.iterrows():
+        severity = "INFO"
+
+        if row["volatility_regime"] == "High":
+            severity = "WARNING"
+
+        if row["volatility_regime"] == "Extreme":
+            severity = "CRITICAL"
+
+        alerts.append({
+            "coin_id": row["coin_id"],
+            "alert_type": "REGIME_CHANGE",
+            "severity": severity,
+            "message": (
+                f"{row['coin_id']} regime changed "
+                f"from {row['previous_regime']} "
+                f"to {row['volatility_regime']}"
+            ),
+            "analytics_timestamp": row["timestamp_utc"]
+        })
+
+    # Sentiment alerts
+    latest = df.sort_values("timestamp_utc").iloc[-1]
+
+    if latest["sentiment_score"] <= 20:
+        alerts.append({
+            "coin_id": "MARKET",
+            "alert_type": "SENTIMENT",
+            "severity": "WARNING",
+            "message": (
+                f"Extreme Fear detected "
+                f"({latest['sentiment_score']})"
+            ),
+            "analytics_timestamp": latest["timestamp_utc"]
+        })
+
+    if latest["sentiment_score"] >= 80:
+        alerts.append({
+            "coin_id": "MARKET",
+            "alert_type": "SENTIMENT",
+            "severity": "WARNING",
+            "message": (
+                f"Extreme Greed detected "
+                f"({latest['sentiment_score']})"
+            ),
+            "analytics_timestamp": latest["timestamp_utc"]
+        })
+
+
+    return pd.DataFrame(alerts)
