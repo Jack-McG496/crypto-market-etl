@@ -1,4 +1,5 @@
 import pandas as pd
+from datetime import datetime
 
 def generate_alerts(df):
 
@@ -14,6 +15,7 @@ def generate_alerts(df):
             "alert_type": "VOLATILITY",
             "severity": "WARNING",
             "message": f"{row['coin_id']} volatility exceeded threshold",
+            "created_at": datetime.utcnow(),
             "analytics_timestamp": row["timestamp_utc"]
         })
 
@@ -48,6 +50,7 @@ def generate_alerts(df):
                 f"from {row['previous_regime']} "
                 f"to {row['volatility_regime']}"
             ),
+            "created_at": datetime.utcnow(),
             "analytics_timestamp": row["timestamp_utc"]
         })
 
@@ -63,6 +66,7 @@ def generate_alerts(df):
                 f"Extreme Fear detected "
                 f"({latest['sentiment_score']})"
             ),
+            "created_at": datetime.utcnow(),
             "analytics_timestamp": latest["timestamp_utc"]
         })
 
@@ -75,6 +79,7 @@ def generate_alerts(df):
                 f"Extreme Greed detected "
                 f"({latest['sentiment_score']})"
             ),
+            "created_at": datetime.utcnow(),
             "analytics_timestamp": latest["timestamp_utc"]
         })
 

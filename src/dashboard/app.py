@@ -144,21 +144,48 @@ st.plotly_chart(fig_compare, use_container_width=True)
 st.subheader("🚨 Recent Alerts")
 st.dataframe(alert_df)
 
-alert_count = pd.DataFrame
-# Alert count by type
-alert_count["volatillity_alerts_count"] = len(alert_df[alert_df["alert_type"] == "VOLATILITY"])
-alert_count["regime_alerts_count"] = len(alert_df[alert_df["alert_type"] == "REGIME_CHANGE"])
-alert_count["sentiment_alerts_count"] = len(alert_df[alert_df["alert_type"] == "SENTIMENT"])
-# Alert count by severity
-alert_count["info_alerts_count"] = len(alert_df[alert_df["severity"] == "INFO"])
-alert_count["warning_alerts_count"] = len(alert_df[alert_df["severity"] == "WARNING"])
-alert_count["critical_alerts_count"] = len(alert_df[alert_df["severity"] == "CRITICAL"])
-# Alert count by coin
-alert_count["btc_alerts_count"]  = len(alert_df[alert_df["coin_id"] == "BTC"])
-alert_count["eth_alerts_count"]  = len(alert_df[alert_df["coin_id"] == "ETH"])
+alert_counts = (
+    alert_df
+    .groupby("severity")
+    .size()
+    .reset_index(name="count")
+)
 
-st.dataframe(alert_count)
+st.dataframe(alert_counts)
 
+alert_type_counts = (
+    alert_df
+    .groupby("alert_type")
+    .size()
+    .reset_index(name="count")
+)
+st.dataframe(alert_type_counts)
+
+coin_counts = (
+    alert_df
+    .groupby("coin_id")
+    .size()
+    .reset_index(name="count")
+)
+st.dataframe(coin_counts)
+
+alert_summary = (
+    alert_df
+    .groupby(["coin_id", "severity"])
+    .size()
+    .reset_index(name="count")
+)
+st.dataframe(alert_summary)
+
+alert_df["created_at"] = pd.to_datetime(alert_df["created_at"])
+
+trend = (
+    alert_df
+    .groupby(pd.Grouper(key="created_at", freq="D"))
+    .size()
+    .reset_index(name="count")
+)
+st.dataframe(trend)
 # -----------------------------
 # Regime Timeline Chart
 # -----------------------------

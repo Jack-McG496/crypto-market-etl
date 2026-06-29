@@ -27,7 +27,6 @@ def load_alert_data(df):
             row["alert_type"],
             row["severity"],
             row["message"],
-            row["z_score"],
             row["created_at"],
             row["analytics_timestamp"]
         )

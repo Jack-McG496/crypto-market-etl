@@ -45,7 +45,8 @@ CREATE TABLE IF NOT EXISTS alerts (
     severity TEXT NOT NULL,
     message TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    analytics_timestamp TIMESTAMP NOT NULL
+    analytics_timestamp TIMESTAMP NOT NULL,
+    ADD CONSTRAINT constraint_conflict UNIQUE (coin_id, created_at)
 );
 
 -- =========================
@@ -53,5 +54,3 @@ CREATE TABLE IF NOT EXISTS alerts (
 -- =========================
 
 CREATE INDEX IF NOT EXISTS idx_volatility_alerts_anomalous ON volatility_alerts (is_anomalous, timestamp_utc);
-
-
