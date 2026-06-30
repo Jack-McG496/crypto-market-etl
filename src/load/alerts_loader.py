@@ -1,6 +1,7 @@
 from psycopg2.extras import execute_batch
 import logging
 from src.utils.db import get_connection
+import pandas as pd
 
 def load_alert_data(df):
     if df.empty:
@@ -42,6 +43,40 @@ def load_alert_data(df):
     except Exception:
         conn.rollback()
         logging.exception("Failed to load alert data")
+        raise
+    finally:
+        conn.close()
+
+def load_pending_alerts():
+
+    sql = """
+    SELECT *
+    FROM alerts
+    WHERE notified = FALSE
+    ORDER BY created_at;
+    """
+
+    conn = get_connection()
+
+    try:
+        return pd.read_sql(sql, conn)
+
+    finally:
+        conn.close()
+
+
+def mark_alert_notified(conn, alert_id):
+    query = """
+    UPDATE alerts SET notified = TRUE WHERE id = %s; 
+    """
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query, alert_id)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        logging.exception("Failed to update alert data")
         raise
     finally:
         conn.close()
