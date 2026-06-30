@@ -162,7 +162,6 @@ streamlit run dashboard/app.py
 
 ## Extending the Project
 - Real-time streaming (Kafka)
-- Alert delivery (Slack / Email)
 - Machine learning anomaly detection
 - Backtesting alert effectiveness
 - Cloud Deployment
