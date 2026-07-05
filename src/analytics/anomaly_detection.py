@@ -1,10 +1,11 @@
+from src.config.settings import ANOMALY_DETECTION_THRESHOLD
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 def detect_anomalies(df, sentiment_score, sentiment_label):
     logger.info("Start anomaly detection")
-    threshold = 3
+    threshold = ANOMALY_DETECTION_THRESHOLD
 
     # Validate input
     if "z_score" not in df.columns:

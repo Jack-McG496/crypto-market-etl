@@ -2,12 +2,9 @@ import requests
 import time
 from datetime import datetime
 from src.utils.logger import get_logger
-import os
+from src.config.settings import COINGECKO_BASE_URL, COINGECKO_API_KEY, COINGECKO_REQUEST_TIMEOUT, COINGECKO_REQUEST_PARAMETERS, RATE_LIMIT_SLEEP_TIME
 
 logger = get_logger(__name__)
-
-BASE_URL = "https://api.coingecko.com/api/v3"
-
 
 def fetch_historical_prices(coin_id, days=90):
     """
@@ -17,7 +14,7 @@ def fetch_historical_prices(coin_id, days=90):
 
     logger.info(f"Fetching {days} days history for {coin_id}")
 
-    url = f"{BASE_URL}/coins/{coin_id}/market_chart"
+    url = f"{COINGECKO_BASE_URL}/coins/{coin_id}/market_chart"
 
     params = {
         "vs_currency": "usd",
@@ -25,14 +22,14 @@ def fetch_historical_prices(coin_id, days=90):
     }
 
     headers = {
-        "x-cg-pro-api-key": os.getenv("COINGECKO_API_KEY")
+        "x-cg-pro-api-key": COINGECKO_API_KEY
     }
 
     response = requests.get(
         url,
         params=params,
         headers=headers,
-        timeout=30
+        timeout=COINGECKO_REQUEST_TIMEOUT
     )
 
     print("Status:", response.status_code)
@@ -63,7 +60,7 @@ def fetch_historical_prices(coin_id, days=90):
 
     logger.info(f"Fetched {len(records)} rows for {coin_id}")
 
-    time.sleep(1.2)  # rate limit safety
+    time.sleep(RATE_LIMIT_SLEEP_TIME)  # rate limit safety
 
     return records
 

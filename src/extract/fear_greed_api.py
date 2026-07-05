@@ -2,21 +2,25 @@ import requests
 import json
 from datetime import datetime
 from pathlib import Path
-
+from src.utils.logger import get_logger
+import os
+from dotenv import load_dotenv
+load_dotenv()
+from src.config.settings import FEAR_GREED_API_URL, FEAR_GREED_REQUEST_TIMEOUT
 
 def fetch_fear_greed_index(limit: int = 1):
     """
     Fetch Crypto Fear & Greed Index data.
     Returns raw JSON response.
     """
-    url = "https://api.alternative.me/fng/"
+    url = f"{FEAR_GREED_API_URL}/v1/crypto-fear-and-greed-index"
 
     params = {
         "limit": limit,
         "format": "json"
     }
 
-    response = requests.get(url, params=params, timeout=10)
+    response = requests.get(url, params=params, timeout=FEAR_GREED_REQUEST_TIMEOUT)
     response.raise_for_status()
 
     return response.json()

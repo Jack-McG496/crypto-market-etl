@@ -4,7 +4,7 @@ import psycopg2
 import os
 from dotenv import load_dotenv
 import plotly.express as px
-
+from src.config.settings import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 load_dotenv()
 
 st.set_page_config(page_title="Crypto Volatility Monitor", layout="wide")
@@ -14,11 +14,11 @@ st.set_page_config(page_title="Crypto Volatility Monitor", layout="wide")
 # -----------------------------
 def get_connection():
     return psycopg2.connect(
-        host=os.getenv("POSTGRES_HOST", "localhost"),
-        port=int(os.getenv("POSTGRES_PORT", 5432)),
-        dbname=os.getenv("POSTGRES_DB", "crypto_db"),
-        user=os.getenv("POSTGRES_USER", "crypto"),
-        password=os.getenv("POSTGRES_PASSWORD", "crypto"),
+        host=DB_HOST,
+        port=DB_PORT,
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD,
     )
 
 

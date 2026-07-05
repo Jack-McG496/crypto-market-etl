@@ -1,6 +1,7 @@
 import os
 import requests
 
+from src.config.settings import SLACK_TIMEOUT, SLACK_WEBHOOK_URL
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -8,7 +9,7 @@ logger = get_logger(__name__)
 
 def send_slack_alert(alert):
 
-    webhook = os.getenv("SLACK_WEBHOOK_URL")
+    webhook = SLACK_WEBHOOK_URL
 
     if not webhook:
         logger.warning("Slack webhook not configured")
@@ -59,7 +60,7 @@ def send_slack_alert(alert):
         response = requests.post(
             webhook,
             json=payload,
-            timeout=10
+            timeout=SLACK_TIMEOUT
         )
 
         response.raise_for_status()

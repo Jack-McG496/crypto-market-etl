@@ -1,14 +1,15 @@
 from src.extract.coingecko_api import fetch_coin_market_data, save_raw_json
 from src.extract.fear_greed_api import fetch_fear_greed_index, save_raw_json as save_fg_json
 from src.utils.logger import get_logger
+from src.config.settings import COIN_LIST
 
 logger = get_logger(__name__)
+
+coins = COIN_LIST
 
 def run_extraction_pipeline():
 
     logger.info("Starting extraction pipeline")
-
-    coins = ["bitcoin", "ethereum"]
 
     for coin in coins:
         data = fetch_coin_market_data(coin)

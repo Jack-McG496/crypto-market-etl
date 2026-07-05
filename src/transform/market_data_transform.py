@@ -3,12 +3,9 @@ from pathlib import Path
 from datetime import datetime
 import pandas as pd
 from src.utils.logger import get_logger
+from src.config.settings import RAW_DATA_DIR, PROCESSED_DATA_DIR
 
 logger = get_logger(__name__)
-
-RAW_DATA_DIR = Path("data/raw")
-PROCESSED_DATA_DIR = Path("data/processed")
-
 
 def load_latest_coingecko_file(coin: str) -> dict:
     """
