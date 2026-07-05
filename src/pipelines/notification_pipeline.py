@@ -3,7 +3,7 @@ from src.load.alerts_loader import load_pending_alerts
 from src.load.alerts_loader import mark_alert_notified
 from src.utils.db import get_connection
 
-def run_notification_pipeline():
+def run_notification_pipeline(alerts_df):
     pending_alerts = load_pending_alerts()
 
     if pending_alerts.empty:

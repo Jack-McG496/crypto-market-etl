@@ -46,10 +46,9 @@ CREATE TABLE IF NOT EXISTS alerts (
     message TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     analytics_timestamp TIMESTAMP NOT NULL,
-    ADD CONSTRAINT constraint_conflict UNIQUE (coin_id, created_at)
+    notified BOOLEAN DEFAULT FALSE,
+    CONSTRAINT constraint_conflict UNIQUE (coin_id, created_at)
 );
-ALTER TABLE alerts
-ADD COLUMN notified BOOLEAN DEFAULT FALSE;
 
 -- =========================
 -- INDEXES (IMPORTANT)

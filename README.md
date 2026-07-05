@@ -2,7 +2,7 @@
 
 ## Overview
 
-A data pipeline that ingests cryptocurrency market data, computes rolling volatility indicators, detects abnormal market conditions 
+A fully dockerised data pipeline that ingests cryptocurrency market data, computes rolling volatility indicators, detects abnormal market conditions 
 using statistical thresholds adjusted by sentiment data, and visualizes results through a live dashboard. 
 
 ---
@@ -55,7 +55,7 @@ This allows downstream use cases such as:
 ### Features
 
 - Extraction of multiple coins with **dynamic fetch function**
-- Fully **Dockerized PostgreSQL** database for portability
+- Fully **Dockerized, pipeline PostgreSQL and dashboard** for portability
 - Historical backfill (90 days hourly data)
 - Incremental ingestion
 - Rolling volatility calculation
