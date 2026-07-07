@@ -1,9 +1,6 @@
 from src.utils.logger import get_logger
-import numpy as np
-import pandas as pd
 
 logger = get_logger(__name__)
-
 
 def calculate_volatility_features(df, window=24):
     logger.info("Start volatility feature calculation")
