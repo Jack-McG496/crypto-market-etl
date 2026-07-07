@@ -1,11 +1,13 @@
 from psycopg2.extras import execute_batch
-import logging
+from src.utils.logger import get_logger
 from src.utils.db import get_connection
 import pandas as pd
 
+logger = get_logger(__name__)
+
 def load_alert_data(df):
     if df.empty:
-        logging.warning("No alert data to load")
+        logger.warning("No alert data to load")
         return
 
     insert_sql = """
@@ -39,10 +41,10 @@ def load_alert_data(df):
         with conn.cursor() as cur:
             execute_batch(cur, insert_sql, records, page_size=100)
         conn.commit()
-        logging.info(f"Loaded {len(records)} rows into alerts table")
+        logger.info(f"Loaded {len(records)} rows into alerts table")
     except Exception:
         conn.rollback()
-        logging.exception("Failed to load alert data")
+        logger.exception("Failed to load alert data")
         raise
     finally:
         conn.close()
@@ -76,7 +78,7 @@ def mark_alert_notified(conn, alert_id):
         conn.commit()
     except Exception:
         conn.rollback()
-        logging.exception("Failed to update alert data")
+        logger.exception("Failed to update alert data")
         raise
     finally:
         conn.close()

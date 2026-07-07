@@ -3,10 +3,11 @@ import json
 from datetime import datetime
 from pathlib import Path
 from src.utils.logger import get_logger
-import os
 from dotenv import load_dotenv
 load_dotenv()
 from src.config.settings import FEAR_GREED_API_URL, FEAR_GREED_REQUEST_TIMEOUT
+
+logger = get_logger(__name__)
 
 def fetch_fear_greed_index(limit: int = 1):
     """
@@ -40,7 +41,7 @@ def save_raw_json(data: dict):
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2)
 
-    print(f"Raw data saved to {file_path}")
+    logger.info(f"Raw data saved to {file_path}")
 
 
 if __name__ == "__main__":

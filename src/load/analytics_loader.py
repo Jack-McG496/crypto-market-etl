@@ -1,10 +1,12 @@
 from psycopg2.extras import execute_batch
-import logging
+from src.utils.logger import get_logger
 from src.utils.db import get_connection
+
+logger = get_logger(__name__)
 
 def load_analytics_data(df):
     if df.empty:
-        logging.warning("No analytics data to load")
+        logger.warning("No analytics data to load")
         return
 
     insert_sql = """
@@ -54,10 +56,10 @@ def load_analytics_data(df):
         with conn.cursor() as cur:
             execute_batch(cur, insert_sql, records, page_size=100)
         conn.commit()
-        logging.info(f"Loaded {len(records)} rows into analytics table")
+        logger.info(f"Loaded {len(records)} rows into analytics table")
     except Exception:
         conn.rollback()
-        logging.exception("Failed to load analytics data")
+        logger.exception("Failed to load analytics data")
         raise
     finally:
         conn.close()

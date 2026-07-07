@@ -1,10 +1,12 @@
 from psycopg2.extras import execute_batch
-import logging
+from src.utils.logger import get_logger
 from src.utils.db import get_connection
+
+logger = get_logger(__name__)
 
 def load_market_data(df):
     if df.empty:
-        logging.warning("No data to load")
+        logger.warning("No data to load")
         return
 
     insert_sql = """
@@ -39,10 +41,10 @@ def load_market_data(df):
         with conn.cursor() as cur:
             execute_batch(cur, insert_sql, records, page_size=100)
         conn.commit()
-        logging.info(f"Loaded {len(records)} rows into Postgres")
+        logger.info(f"Loaded {len(records)} rows into Postgres")
     except Exception:
         conn.rollback()
-        logging.exception("Failed to load market data")
+        logger.exception("Failed to load market data")
         raise
     finally:
         conn.close()

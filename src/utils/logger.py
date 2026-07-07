@@ -6,7 +6,6 @@ LOG_DIR.mkdir(exist_ok=True)
 
 LOG_FILE = LOG_DIR / "etl.log"
 
-
 def get_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
 

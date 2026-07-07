@@ -2,10 +2,7 @@
 import requests
 import json
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, Any
 from src.utils.logger import get_logger
-import os
 from dotenv import load_dotenv
 load_dotenv()
 from src.config.settings import COIN_LIST, COINGECKO_BASE_URL, COINGECKO_API_KEY, COINGECKO_REQUEST_TIMEOUT, COINGECKO_REQUEST_PARAMETERS, RAW_DATA_DIR 
