@@ -29,6 +29,9 @@ DATA_DIR = BASE_DIR / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
 
+LOG_DIR = BASE_DIR / "logs"
+LOG_FILE = LOG_DIR / "etl.log"
+
 # Database
 DB_HOST = _get_env("POSTGRES_HOST", "localhost")
 DB_PORT = _get_int_env("POSTGRES_PORT", 5432)
