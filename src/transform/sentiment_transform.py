@@ -43,7 +43,7 @@ def transform_fear_greed(raw_json: dict) -> dict:
 
 def run_fear_greed_transform() -> pd.DataFrame:
     """
-    Run transform and return a DataFrame.
+    Run alerts and return a DataFrame.
     """
     logger.info("Starting fear and greed data transformation")
 

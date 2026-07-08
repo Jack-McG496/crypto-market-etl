@@ -44,7 +44,7 @@ def transform_market_data(raw_data: dict) -> dict:
 
 def run_transform(coins: list[str]) -> pd.DataFrame:
     """
-    Run transform for multiple coins and return a DataFrame.
+    Run alerts for multiple coins and return a DataFrame.
     """
     logger.info("Starting data transformation")
 
