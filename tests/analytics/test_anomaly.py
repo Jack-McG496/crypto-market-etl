@@ -41,7 +41,7 @@ def test_anomaly_extreme_fear():
     })
 
     # Call function
-    result = detect_anomalies(df, 80, "SENTIMENT_LABEL")
+    result = detect_anomalies(df, 80, "FEAR")
 
     # Assert result
     assert result.iloc[0]["threshold"] == 2.5
@@ -56,7 +56,7 @@ def test_anomaly_extreme_greed():
     })
 
     # Call function
-    result = detect_anomalies(df, 20, "SENTIMENT_LABEL")
+    result = detect_anomalies(df, 20, "GREED")
 
     # Assert result
     assert result.iloc[0]["threshold"] == 2.0
