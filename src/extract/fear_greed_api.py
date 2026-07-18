@@ -14,14 +14,10 @@ def fetch_fear_greed_index(limit: int = 1):
     Fetch Crypto Fear & Greed Index data.
     Returns raw JSON response.
     """
-    url = f"{FEAR_GREED_API_URL}/v1/crypto-fear-and-greed-index"
+    base_url = FEAR_GREED_API_URL.rstrip("/")
+    url = f"{base_url}/?limit={limit}&format=json"
 
-    params = {
-        "limit": limit,
-        "format": "json"
-    }
-
-    response = requests.get(url, params=params, timeout=FEAR_GREED_REQUEST_TIMEOUT)
+    response = requests.get(url, timeout=FEAR_GREED_REQUEST_TIMEOUT)
     response.raise_for_status()
 
     return response.json()
