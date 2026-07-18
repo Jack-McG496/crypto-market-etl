@@ -4,7 +4,7 @@ from src.analytics.regime_detection import classify_volatility_regime
 from src.alerts.alert_engine import generate_alerts
 from tests.conftest import sample_history_df
 
-
+@pytest.mark.integration
 def test_analytics_pipeline():
 
     price_df = sample_history_df()

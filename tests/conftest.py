@@ -1,5 +1,34 @@
+import os
+
 import pandas as pd
 import pytest
+from src.utils.db import get_connection
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "integration: mark test as integration requiring external services"
+    )
+
+@pytest.fixture(scope="function")
+def db_transaction(db_connection):
+    cursor = db_connection.cursor()
+    cursor.execute("BEGIN")
+    yield db_connection
+    db_connection.rollback()
+    cursor.close()
+
+@pytest.fixture(scope="session")
+def database_url():
+    return os.getenv("TEST_DATABASE_URL")
+
+@pytest.fixture(scope="session")
+def db_connection(database_url):
+    if not database_url:
+        pytest.skip("Skipping integration tests because TEST_DATABASE_URL is not set")
+    conn = get_connection(database_url)
+    yield conn
+    conn.close()
 
 @pytest.fixture
 def sample_market_df():

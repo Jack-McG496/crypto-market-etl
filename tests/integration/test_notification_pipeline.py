@@ -5,6 +5,7 @@ from src.load.alerts_loader import load_alert_data
 from src.pipelines.notification_pipeline import run_notification_pipeline
 
 @patch("requests.post")
+@pytest.mark.integration
 def test_notification(mock_post):
     mock_post.return_value.status_code = 200
 
@@ -22,13 +23,13 @@ def test_notification(mock_post):
 
     load_alert_data(alerts)
 
-    run_notification_pipeline()
+    run_notification_pipeline(alerts)
 
     args, kwargs = mock_post.call_args
 
     assert mock_post.assert_called_once()
 
-    assert kwargs["json"]["text"] == \
+    assert kwargs["json"]["blocks"] == \
            "btc volatility exceeded threshold"
 
 

@@ -19,7 +19,7 @@ def test_elevated_regime_detection():
 
     result = classify_volatility_regime(df)
 
-    assert result.iloc[0]["volatility_regime"] == "Calm"
+    assert result.iloc[0]["volatility_regime"] == "Elevated"
 
 def test_high_regime_detection():
     df = pd.DataFrame({
@@ -39,4 +39,4 @@ def test_extreme_regime_detection():
 
     result = classify_volatility_regime(df)
 
-    assert result.iloc[0]["volatility_regime"] == "High"
+    assert result.iloc[0]["volatility_regime"] == "Extreme"

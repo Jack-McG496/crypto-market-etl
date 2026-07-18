@@ -14,7 +14,7 @@ def test_volatility_alert_generation():
 
 def test_regime_change_alert_generation():
     df = pd.DataFrame({
-        "coin_id": "btc" * 2,
+        "coin_id": ["btc"] * 2,
         "timestamp_utc": pd.date_range("2026-01-01", periods=2, freq="h"),
         "volatility_regime": ["High", "Extreme"]
     })
@@ -36,7 +36,7 @@ def test_sentiment_alert_generation():
 
 def test_regime_severity_alert():
     df = pd.DataFrame({
-        "coin_id": "btc" * 2,
+        "coin_id": ["btc"] * 2,
         "timestamp_utc": pd.date_range("2026-01-01", periods=2, freq="h"),
         "volatility_regime": ["High", "Extreme"]
     })

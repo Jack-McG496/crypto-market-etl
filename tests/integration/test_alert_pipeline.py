@@ -1,9 +1,9 @@
 import pandas as pd
 from src.alerts.alert_engine import generate_alerts
 from src.load.alerts_loader import load_alert_data
-from src.utils.db import get_connection
 
-def test_alert_pipeline():
+@pytest.mark.integration
+def test_alert_pipeline(db_connection):
     df = pd.DataFrame({
         "coin_id": "btc",
         "timestamp_utc": pd.date_range("2026-01-01", periods=1, freq="h"),
@@ -18,15 +18,15 @@ def test_alert_pipeline():
 
     load_alert_data(alerts)
 
-    conn = get_connection()
+    conn = db_connection
 
-    count = pd.read_sql("SELECT COUNT(*) FROM alerts", conn)
+    count_df = pd.read_sql("SELECT COUNT(*) FROM alerts", conn)
 
     alert_df = pd.read_sql("SELECT * FROM alerts", conn)
 
-    assert count == 1
+    assert count_df.iloc[0, 0] == 1
 
-    assert alert_df["alert_type"] == "VOLATILITY"
-    assert alert_df["severity"] == "WARNING"
-    assert "bitcoin" in alert_df["message"]
+    assert alert_df.iloc[0]["alert_type"] == "VOLATILITY"
+    assert alert_df.iloc[0]["severity"] == "WARNING"
+    assert "bitcoin" in alert_df.iloc[0]["message"]
 

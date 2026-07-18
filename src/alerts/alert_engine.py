@@ -1,7 +1,22 @@
 import pandas as pd
 from datetime import datetime
 
+from src.utils import logger
+
+logger = logger.get_logger(__name__)
+
 def generate_alerts(df):
+
+    if df.empty:
+        logger.warning("No data available for alert generation.")
+        return pd.DataFrame(columns=[
+            "coin_id",
+            "alert_type",
+            "severity",
+            "message",
+            "created_at",
+            "analytics_timestamp"
+        ])
 
     alerts = []
 

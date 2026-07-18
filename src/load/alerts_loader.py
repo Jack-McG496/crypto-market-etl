@@ -74,7 +74,7 @@ def mark_alert_notified(conn, alert_id):
 
     try:
         with conn.cursor() as cur:
-            cur.execute(query, alert_id)
+            cur.execute(query, (alert_id,))
         conn.commit()
     except Exception:
         conn.rollback()
