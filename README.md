@@ -3,7 +3,7 @@
 ## Overview
 
 A fully dockerised data pipeline that ingests cryptocurrency market data, computes rolling volatility indicators, detects abnormal market conditions 
-using statistical thresholds adjusted by sentiment data, and visualizes results through a live dashboard. 
+using statistical thresholds adjusted by sentiment data, generates alerts based on sentiment, volatility and regime changes and visualizes results through a live dashboard. 
 
 ---
 ## Business Problem
@@ -13,25 +13,19 @@ Simple price tracking provides limited insight into risk events or abnormal beha
 
 This project addresses the following questions:
 
-- When is price movement statistically abnormal, not just volatile?
+- Was is price movement statistically abnormal, not just volatile?
 - How does market sentiment (Fear & Greed Index) influence volatility risk?
 - Can we detect early signals of extreme market conditions?
 
 ---
 
 ## Architecture
-External APIs
-   │
-Extract Layer
-   │
-Transform Layer
-   │
-PostgreSQL
-   │
-Analytics Engine
-   │
-Volatility Alerts
-   │
+External APIs ->
+Extract Layer ->
+Transform Layer ->
+PostgreSQL ->
+Analytics Engine ->
+Volatility Alerts ->
 Streamlit Dashboard
 
 The pipeline:
@@ -44,6 +38,7 @@ The pipeline:
 6. Stores both raw data and analytical outputs in PostgreSQL
 7. Creates alerts based on key changes in sentiment, regime or volatility
 8. Displays analytics through a live dashboard
+9. Orchestration handled by Apache Airflow
 
 
 This allows downstream use cases such as:
@@ -55,7 +50,7 @@ This allows downstream use cases such as:
 ### Features
 
 - Extraction of multiple coins with **dynamic fetch function**
-- Fully **Dockerized, pipeline PostgreSQL and dashboard** for portability
+- Fully **Dockerized, Airflow Orchestration, pipeline PostgreSQL and dashboard** for portability
 - Historical backfill (90 days hourly data)
 - Incremental ingestion
 - Rolling volatility calculation
@@ -116,11 +111,11 @@ This reflects real-world risk behavior where sentiment amplifies volatility impa
 - PostgreSQL (via Docker)  
 - Git
 - Streamlit + Plotly
-- Windows Task Scheduler
+- Apache Airflow
 
 ---
 
-## Setup Instructions
+## Setup Instructions - Manual
 
 ### 1. Clone repository
 ```bash
@@ -134,27 +129,16 @@ python -m venv venv
 venv\Scripts\activate      # Windows
 source venv/bin/activate   # Mac/Linux
 ```
-### 3. Install Dependencies
+### 3. Run Dockerised Pipeline with Airflow
 ```bash
-pip install -r requirements.txt
+docker compose --profile airflow up -d
 ```
-### 4. Start PostgreSQL with Docker
+### 3.2. Run Dockerised Pipeline without Airflow
 ```bash
-docker compose up -d
+docker compose up -d postgres backfill pipeline dashboard
 ```
-### 5. Apply Schema
-```bash
-Get-Content sql/schema.sql | docker exec -i crypto_postgres psql -U crypto -d crypto_db
-```
-### 6. Run pipeline
-```bash
-python -m src.main
-```
-### Launch Dashboard
-```bash
-streamlit run dashboard/app.py
-```
-#### Example Dashboard
+
+## Example Dashboard
 
 ![img.png](img.png)
 
