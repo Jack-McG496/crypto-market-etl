@@ -23,7 +23,7 @@ def test_notification(mock_post):
 
     load_alert_data(alerts)
 
-    run_notification_pipeline(alerts)
+    run_notification_pipeline()
 
     args, kwargs = mock_post.call_args
 

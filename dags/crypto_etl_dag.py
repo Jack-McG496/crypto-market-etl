@@ -27,7 +27,7 @@ def run_alerts(**context):
 def run_notifications(**context):
     from src.pipelines.notification_pipeline import run_notification_pipeline
     alerts_df = context["task_instance"].xcom_pull(task_ids="alerts")
-    run_notification_pipeline(alerts_df)
+    run_notification_pipeline()
 
 default_args = {
     "owner": "crypto-etl",

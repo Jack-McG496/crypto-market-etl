@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import datetime
-
+from src.main import metrics
 from src.utils import logger
 
 logger = logger.get_logger(__name__)
@@ -97,6 +97,9 @@ def generate_alerts(df):
             "created_at": datetime.utcnow(),
             "analytics_timestamp": latest["timestamp_utc"]
         })
+
+    metrics.alerts_generated = len(alerts)
+    logger.info(f"Number of alert rows produced: {len(alerts)}")
 
 
     return pd.DataFrame(alerts)

@@ -75,4 +75,4 @@ def save_processed_data(df: pd.DataFrame):
     file_path = PROCESSED_DATA_DIR / f"market_data_{timestamp}.csv"
 
     df.to_csv(file_path, index=False)
-    print(f"Processed data saved to {file_path}")
+    logger.info(f"Processed market data saved to {file_path}")

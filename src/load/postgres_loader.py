@@ -41,7 +41,7 @@ def load_market_data(df):
         with conn.cursor() as cur:
             execute_batch(cur, insert_sql, records, page_size=100)
         conn.commit()
-        logger.info(f"Loaded {len(records)} rows into Postgres")
+        logger.info(f"Loaded {len(records)} rows into market data Postgres")
     except Exception:
         conn.rollback()
         logger.exception("Failed to load market data")
