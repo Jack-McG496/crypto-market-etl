@@ -26,7 +26,7 @@ def test_regime_change_alert_generation():
         "coin_id": ["btc", "btc"],
         "timestamp_utc": pd.date_range("2026-01-01", periods=2, freq="h"),
         "sentiment_score": [50, 50],
-        "is_anomalous": [False, True],
+        "is_anomalous": [False, False],
         "volatility_regime": ["High", "Extreme"]
     })
 
@@ -52,7 +52,7 @@ def test_regime_severity_alert():
         "coin_id": ["btc"] * 2,
         "timestamp_utc": pd.date_range("2026-01-01", periods=2, freq="h"),
         "sentiment_score": [50, 50],
-        "is_anomalous": [False, True],
+        "is_anomalous": [False, False],
         "volatility_regime": ["High", "Extreme"]
     })
 
