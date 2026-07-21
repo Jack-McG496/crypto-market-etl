@@ -1,9 +1,14 @@
 from src.config.settings import ANOMALY_DETECTION_THRESHOLD
 from src.utils.logger import get_logger
+import pandas as pd
 
 logger = get_logger(__name__)
 
-def detect_anomalies(df, sentiment_score, sentiment_label):
+def detect_anomalies(df: pd.DataFrame, sentiment_score, sentiment_label) -> pd.DataFrame:
+    """
+    Receives panda dataframe, sentiment details
+    Returns a data frame with anomalies detected based on the sentiment parameters.
+    """
     logger.info("Start anomaly detection")
     threshold = ANOMALY_DETECTION_THRESHOLD
 

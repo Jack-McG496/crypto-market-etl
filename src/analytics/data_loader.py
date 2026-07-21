@@ -1,11 +1,11 @@
-import pandas as pd
 from src.load.postgres_loader import get_connection
 from src.utils.logger import get_logger
+import pandas as pd
 
 logger = get_logger(__name__)
 
 
-def load_price_history(days=90):
+def load_price_history() -> pd.DataFrame:
     """
     Load historical price data from market_data table.
     Used for volatility calculations.

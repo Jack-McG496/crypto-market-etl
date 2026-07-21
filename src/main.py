@@ -5,11 +5,8 @@ from src.pipelines.alert_pipeline import run_alert_pipeline
 from src.pipelines.metrics import PipelineMetrics
 from src.pipelines.notification_pipeline import run_notification_pipeline
 from src.utils.logger import get_logger
-from dotenv import load_dotenv
 
 import time
-
-load_dotenv()
 
 logger = get_logger(__name__)
 metrics = PipelineMetrics()

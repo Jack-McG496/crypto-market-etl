@@ -5,7 +5,6 @@ import pandas as pd
 
 logger = get_logger(__name__)
 
-
 def ensure_alerts_table_schema(conn):
     with conn.cursor() as cur:
         cur.execute("""
@@ -29,7 +28,10 @@ def ensure_alerts_table_schema(conn):
     return conn
 
 
-def load_alert_data(df):
+def load_alert_data(df: pd.DataFrame):
+    """
+    Loads alert data into alert table.
+    """
     if df.empty:
         logger.warning("No alert data to load")
         return
@@ -76,7 +78,11 @@ def load_alert_data(df):
         conn.close()
 
 
-def load_pending_alerts():
+def load_pending_alerts() -> pd.DataFrame:
+    """
+    Returns a panda dataframe of alerts from database that have yet to be processed.
+    """
+
     sql = """
     SELECT *
     FROM alerts
@@ -93,7 +99,7 @@ def load_pending_alerts():
         conn.close()
 
 
-def mark_alert_notified(conn, alert_id):
+def mark_alert_notified(conn, alert_id: str):
     query = """
     UPDATE alerts SET notified = TRUE WHERE id = %s;
     """

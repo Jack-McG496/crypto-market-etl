@@ -8,12 +8,12 @@ from src.main import metrics
 import time
 logger = get_logger(__name__)
 
-def run_analytics_pipeline(sentiment_score, sentiment_label):
+def run_analytics_pipeline(sentiment_score: int, sentiment_label: str):
     start = time.perf_counter()
 
     logger.info("Starting analytics pipeline")
 
-    price_df = load_price_history(days=90)
+    price_df = load_price_history()
 
     analytics_df = calculate_volatility_features(price_df)
 

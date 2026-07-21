@@ -1,16 +1,12 @@
-# Step 1: Extract Bitcoin price + volume from CoinGecko and save the raw JSON to disk
 import requests
 import json
 from datetime import datetime
 from src.utils.logger import get_logger
-from dotenv import load_dotenv
-load_dotenv()
 from src.config.settings import COIN_LIST, COINGECKO_BASE_URL, COINGECKO_API_KEY, COINGECKO_REQUEST_TIMEOUT, COINGECKO_REQUEST_PARAMETERS, RAW_DATA_DIR 
 
 logger = get_logger(__name__)
 
-# fetch
-def fetch_coin_market_data(coin_id: str):
+def fetch_coin_market_data(coin_id: str) -> json:
     """
         Fetch current market data from CoinGecko API.
         Returns raw JSON response.
@@ -44,10 +40,9 @@ def fetch_coin_market_data(coin_id: str):
     logger.info(f"Fetched CoinGecko market data for {coin_id}")
     return response.json()
 
-# store
 def save_raw_json(data: dict, source_name: str):
     """
-    Save raw API response to data/raw with timestamped filename.
+        Save raw API response to data/raw with timestamped filename.
     """
     timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
 

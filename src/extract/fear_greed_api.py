@@ -9,10 +9,10 @@ from src.config.settings import FEAR_GREED_API_URL, FEAR_GREED_REQUEST_TIMEOUT
 
 logger = get_logger(__name__)
 
-def fetch_fear_greed_index(limit: int = 1):
+def fetch_fear_greed_index(limit: int = 1) -> json:
     """
-    Fetch Crypto Fear & Greed Index data.
-    Returns raw JSON response.
+        Fetch Crypto Fear & Greed Index data.
+        Returns raw JSON response.
     """
     base_url = FEAR_GREED_API_URL.rstrip("/")
     url = f"{base_url}/?limit={limit}&format=json"
@@ -25,7 +25,7 @@ def fetch_fear_greed_index(limit: int = 1):
 
 def save_raw_json(data: dict):
     """
-    Save raw API response to data/raw with timestamped filename.
+        Save raw API response to data/raw with timestamped filename.
     """
     timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
 

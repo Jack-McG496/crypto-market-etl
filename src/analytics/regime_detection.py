@@ -1,9 +1,14 @@
 from src.utils.logger import get_logger
+import pandas as pd
 
 logger = get_logger(__name__)
 
 
-def classify_volatility_regime(df):
+def classify_volatility_regime(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Receives a panda dataframe
+    Returns a dataframe including volatility regime based on the z-score calculation and threshold.
+    """
     logger.info("Classifying volatility regimes")
 
     if "z_score" not in df.columns:

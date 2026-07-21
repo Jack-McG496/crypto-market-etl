@@ -5,7 +5,10 @@ from src.utils import logger
 
 logger = logger.get_logger(__name__)
 
-def generate_alerts(df):
+def generate_alerts(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Receives panda dataframe and based on three alert types generates a dataframe of alerts.
+    """
 
     if df.empty:
         logger.warning("No data available for alert generation.")

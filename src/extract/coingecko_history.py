@@ -6,7 +6,7 @@ from src.config.settings import COINGECKO_BASE_URL, COINGECKO_API_KEY, COINGECKO
 
 logger = get_logger(__name__)
 
-def fetch_historical_prices(coin_id, days=90):
+def fetch_historical_prices(coin_id: str, days=90) -> list:
     """
     Fetch historical market data for a coin.
     Returns hourly/daily prices depending on range.
@@ -65,7 +65,7 @@ def fetch_historical_prices(coin_id, days=90):
     return records
 
 
-def backfill_coins(coins, days=90):
+def backfill_coins(coins: list, days=90) -> list:
 
     all_data = []
 

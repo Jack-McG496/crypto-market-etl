@@ -1,16 +1,17 @@
 import requests
 from src.config.settings import SLACK_TIMEOUT, SLACK_WEBHOOK_URL
 from src.utils.logger import get_logger
+import pandas as pd
 
 logger = get_logger(__name__)
 
-def send_slack_alert(alert):
+def send_slack_alert(alert: pd.DataFrame) -> bool:
 
     webhook = SLACK_WEBHOOK_URL
 
     if not webhook:
         logger.warning("Slack webhook not configured")
-        return
+        return False
 
     payload = {
         "blocks": [

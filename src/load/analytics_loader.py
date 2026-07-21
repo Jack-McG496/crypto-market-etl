@@ -1,10 +1,14 @@
 from psycopg2.extras import execute_batch
 from src.utils.logger import get_logger
 from src.utils.db import get_connection
+import pandas as pd
 
 logger = get_logger(__name__)
 
-def load_analytics_data(df):
+def load_analytics_data(df: pd.DataFrame):
+    """
+    Loads transformed analytics into volatility_alerts table.
+    """
     if df.empty:
         logger.warning("No analytics data to load")
         return

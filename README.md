@@ -20,13 +20,7 @@ This project addresses the following questions:
 ---
 
 ## Architecture
-External APIs ->
-Extract Layer ->
-Transform Layer ->
-PostgreSQL ->
-Analytics Engine ->
-Volatility Alerts ->
-Streamlit Dashboard
+![ArchitectureDiagram.png](ArchitectureDiagram.png)
 
 The pipeline:
 
@@ -46,6 +40,10 @@ This allows downstream use cases such as:
 - Monitoring dashboards
 - Quantitative research
 - Model training datasets
+
+### Data Model
+
+![DataModel.png](DataModel.png)
 
 ### Features
 

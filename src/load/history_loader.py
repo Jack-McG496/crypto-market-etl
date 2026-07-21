@@ -4,7 +4,7 @@ from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-def load_historical_data(records):
+def load_historical_data(records: list):
 
     if not records:
         logger.warning("No historical data to load")

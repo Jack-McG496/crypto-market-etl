@@ -1,10 +1,14 @@
 from psycopg2.extras import execute_batch
 from src.utils.logger import get_logger
 from src.utils.db import get_connection
+import pandas as pd
 
 logger = get_logger(__name__)
 
-def load_market_data(df):
+def load_market_data(df: pd.DataFrame):
+    """
+    Loads market data to market_data table.
+    """
     if df.empty:
         logger.warning("No data to load")
         return
