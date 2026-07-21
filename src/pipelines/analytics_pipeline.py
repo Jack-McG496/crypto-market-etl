@@ -8,7 +8,7 @@ import time
 
 logger = get_logger(__name__)
 
-def run_analytics_pipeline(sentiment_score: int, sentiment_label: str):
+def run_analytics_pipeline(sentiment_score: int, sentiment_label: str, metrics):
     start = time.perf_counter()
 
     logger.info("Starting analytics pipeline")

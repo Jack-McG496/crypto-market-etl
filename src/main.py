@@ -26,7 +26,7 @@ def main():
         # Analytics
         sentiment_score = sentiment_df["sentiment_score"].iloc[-1]
         sentiment_label = sentiment_df["sentiment_label"].iloc[-1]
-        analytics_df = run_analytics_pipeline(sentiment_score, sentiment_label)
+        analytics_df = run_analytics_pipeline(sentiment_score, sentiment_label, metrics)
 
         # Alerts
         run_alert_pipeline(analytics_df, metrics)
