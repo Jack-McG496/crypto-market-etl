@@ -4,8 +4,8 @@ from src.analytics.anomaly_detection import detect_anomalies
 from src.analytics.regime_detection import classify_volatility_regime
 from src.load.analytics_loader import load_analytics_data
 from src.utils.logger import get_logger
-from src.main import metrics
 import time
+
 logger = get_logger(__name__)
 
 def run_analytics_pipeline(sentiment_score: int, sentiment_label: str):

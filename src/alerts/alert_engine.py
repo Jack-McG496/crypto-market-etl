@@ -1,11 +1,10 @@
 import pandas as pd
 from datetime import datetime
-from src.main import metrics
 from src.utils import logger
 
 logger = logger.get_logger(__name__)
 
-def generate_alerts(df: pd.DataFrame) -> pd.DataFrame:
+def generate_alerts(df: pd.DataFrame, metrics) -> pd.DataFrame:
     """
     Receives panda dataframe and based on three alert types generates a dataframe of alerts.
     """

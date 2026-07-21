@@ -1,7 +1,11 @@
 import logging
-from src.config.settings import LOG_FILE
+from src.config.settings import LOG_FILE, LOG_DIR
 
 def get_logger(name: str) -> logging.Logger:
+
+    # Create the logs directory if it doesn't exist
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
     logger = logging.getLogger(name)
 
     if logger.handlers:

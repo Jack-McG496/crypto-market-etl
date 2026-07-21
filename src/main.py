@@ -9,9 +9,10 @@ from src.utils.logger import get_logger
 import time
 
 logger = get_logger(__name__)
-metrics = PipelineMetrics()
 
 def main():
+    metrics = PipelineMetrics()
+
     start = time.perf_counter()
     logger.info("Pipeline started")
 
@@ -20,7 +21,7 @@ def main():
         run_extraction_pipeline()
 
         # Transform
-        _, sentiment_df = run_market_pipeline()
+        _, sentiment_df = run_market_pipeline(metrics)
 
         # Analytics
         sentiment_score = sentiment_df["sentiment_score"].iloc[-1]
@@ -28,11 +29,11 @@ def main():
         analytics_df = run_analytics_pipeline(sentiment_score, sentiment_label)
 
         # Alerts
-        run_alert_pipeline(analytics_df)
+        run_alert_pipeline(analytics_df, metrics)
 
         # Notifications
 
-        run_notification_pipeline()
+        run_notification_pipeline(metrics)
 
         logger.info("Pipeline finished successfully")
 

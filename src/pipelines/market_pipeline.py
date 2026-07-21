@@ -3,12 +3,11 @@ from src.transform.sentiment_transform import run_fear_greed_transform, save_fea
 from src.load.postgres_loader import load_market_data
 from src.utils.logger import get_logger
 from src.config.settings import COIN_LIST
-from src.main import metrics
 import time
 
 logger = get_logger(__name__)
 
-def run_market_pipeline():
+def run_market_pipeline(metrics):
     start = time.perf_counter()
 
     logger.info("Starting market data pipeline")
