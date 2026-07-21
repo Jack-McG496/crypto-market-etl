@@ -20,6 +20,18 @@ def generate_alerts(df: pd.DataFrame, metrics) -> pd.DataFrame:
             "analytics_timestamp"
         ])
 
+    required_columns = {
+        "coin_id",
+        "timestamp_utc",
+        "is_anomalous",
+        "volatility_regime"
+    }
+
+    missing = required_columns - set(df.columns)
+
+    if missing:
+        raise ValueError(f"Missing alert columns: {missing}")
+
     alerts = []
 
     # Volatility alerts
