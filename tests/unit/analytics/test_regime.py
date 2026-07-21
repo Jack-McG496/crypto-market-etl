@@ -1,5 +1,5 @@
-import pandas as pd
 from src.analytics.regime_detection import classify_volatility_regime
+import pandas as pd
 
 def test_calm_regime_detection():
     df = pd.DataFrame({

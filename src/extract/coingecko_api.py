@@ -33,7 +33,7 @@ def fetch_coin_market_data(coin_id: str) -> json:
     except requests.exceptions.HTTPError:
         logger.error(f"HTTP Error while fetching CoinGecko market data for {coin_id}")
         raise
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.RequestException:
         logger.error(f"Request error while fetching CoinGecko market data for {coin_id}")
         raise
 

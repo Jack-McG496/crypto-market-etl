@@ -1,6 +1,8 @@
-import pandas as pd
+import pytest as pytest
+
 from src.alerts.alert_engine import generate_alerts
 from src.load.alerts_loader import load_alert_data
+import pandas as pd
 
 @pytest.mark.integration
 def test_alert_pipeline(db_connection):

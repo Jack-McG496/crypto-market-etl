@@ -1,11 +1,9 @@
+from src.utils.logger import get_logger
+from src.config.settings import FEAR_GREED_API_URL, FEAR_GREED_REQUEST_TIMEOUT
 import requests
 import json
 from datetime import datetime
 from pathlib import Path
-from src.utils.logger import get_logger
-from dotenv import load_dotenv
-load_dotenv()
-from src.config.settings import FEAR_GREED_API_URL, FEAR_GREED_REQUEST_TIMEOUT
 
 logger = get_logger(__name__)
 

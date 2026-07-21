@@ -2,7 +2,7 @@ import requests
 import time
 from datetime import datetime
 from src.utils.logger import get_logger
-from src.config.settings import COINGECKO_BASE_URL, COINGECKO_API_KEY, COINGECKO_REQUEST_TIMEOUT, COINGECKO_REQUEST_PARAMETERS, RATE_LIMIT_SLEEP_TIME
+from src.config.settings import COINGECKO_BASE_URL, COINGECKO_API_KEY, COINGECKO_REQUEST_TIMEOUT, RATE_LIMIT_SLEEP_TIME
 
 logger = get_logger(__name__)
 

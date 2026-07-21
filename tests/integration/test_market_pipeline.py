@@ -1,6 +1,7 @@
 from src.transform.market_data_transform import run_transform
 from src.load.postgres_loader import load_market_data
 import pandas as pd
+import pytest
 
 @pytest.mark.integration
 def test_market_pipeline(db_connection):

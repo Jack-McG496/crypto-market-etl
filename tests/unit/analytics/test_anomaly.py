@@ -1,5 +1,5 @@
-import pandas as pd
 from src.analytics.anomaly_detection import detect_anomalies
+import pandas as pd
 
 def test_anomaly_above_detection():
     # Mock data
@@ -14,7 +14,7 @@ def test_anomaly_above_detection():
     result = detect_anomalies(df, 50, "SENTIMENT_LABEL")
 
     # Assert result
-    assert result.iloc[0]["is_anomalous"] == True
+    assert result.iloc[0]["is_anomalous"]
 
 def test_anomaly_below_detection():
     # Mock data
@@ -29,7 +29,7 @@ def test_anomaly_below_detection():
     result = detect_anomalies(df, 50, "SENTIMENT_LABEL")
 
     # Assert result
-    assert result.iloc[0]["is_anomalous"] == False
+    assert not result.iloc[0]["is_anomalous"]
 
 def test_anomaly_extreme_greed():
     # Mock data

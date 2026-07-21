@@ -24,7 +24,7 @@ def generate_alerts(df: pd.DataFrame) -> pd.DataFrame:
     alerts = []
 
     # Volatility alerts
-    anomalous = df[df["is_anomalous"] == True]
+    anomalous = df[df["is_anomalous"]]
 
     for _, row in anomalous.iterrows():
 

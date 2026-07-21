@@ -112,7 +112,7 @@ fig_z.add_hline(
 )
 
 # highlight anomalies
-anomalies = analytics[analytics["is_anomalous"] == True]
+anomalies = analytics[analytics["is_anomalous"]]
 
 fig_z.add_scatter(
     x=anomalies["timestamp_utc"],

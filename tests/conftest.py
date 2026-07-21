@@ -1,8 +1,7 @@
+from src.utils.db import get_connection
 import os
-
 import pandas as pd
 import pytest
-from src.utils.db import get_connection
 
 def pytest_configure(config):
     config.addinivalue_line(
