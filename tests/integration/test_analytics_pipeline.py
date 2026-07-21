@@ -3,11 +3,12 @@ from src.analytics.anomaly_detection import detect_anomalies
 from src.analytics.regime_detection import classify_volatility_regime
 from src.alerts.alert_engine import generate_alerts
 from tests.conftest import sample_history_df
+from src.pipelines.metrics import PipelineMetrics
 import pytest
 
 @pytest.mark.integration
 def test_analytics_pipeline():
-
+    metrics = PipelineMetrics()
     price_df = sample_history_df()
 
     analytics = calculate_volatility_features(price_df)
@@ -22,7 +23,7 @@ def test_analytics_pipeline():
         analytics
     )
 
-    alerts = generate_alerts(analytics)
+    alerts = generate_alerts(analytics, metrics)
 
     assert len(analytics) > 0
 

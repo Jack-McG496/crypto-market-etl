@@ -3,9 +3,12 @@ import pytest as pytest
 from src.alerts.alert_engine import generate_alerts
 from src.load.alerts_loader import load_alert_data
 import pandas as pd
+from src.pipelines.metrics import PipelineMetrics
+
 
 @pytest.mark.integration
 def test_alert_pipeline(db_connection):
+    metrics = PipelineMetrics()
     df = pd.DataFrame({
         "coin_id": "btc",
         "timestamp_utc": pd.date_range("2026-01-01", periods=1, freq="h"),
@@ -16,7 +19,7 @@ def test_alert_pipeline(db_connection):
         "z_score": [3.8]
     })
 
-    alerts = generate_alerts(df)
+    alerts = generate_alerts(df, metrics)
 
     load_alert_data(alerts)
 
