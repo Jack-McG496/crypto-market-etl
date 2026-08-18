@@ -96,49 +96,131 @@ def render_zscore_chart(analytics: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_comparison_chart(analytics_df: pd.DataFrame):
+def render_comparison_chart(
+    analytics_df: pd.DataFrame,
+    market_df: pd.DataFrame,
+    coins: list[str] | None = None,
+    metric: str = "Z-score",
+    mode: str = "Overlap",
+):
     st.subheader("Coin Comparison")
-    if analytics_df.empty:
-        st.warning("No analytics data available for coin comparison.")
+    if analytics_df.empty and market_df.empty:
+        st.warning("No data available for comparison.")
         return
 
-    fig = px.line(
-        analytics_df,
-        x="timestamp_utc",
-        y="z_score",
-        color="coin_id",
-        title="Volatility Z-Score Comparison",
-        labels={"timestamp_utc": "Timestamp", "z_score": "Z-Score", "coin_id": "Coin"},
-    )
-    fig.update_layout(hovermode="x unified")
+    # Filter by selected coins
+    if coins:
+        analytics = analytics_df[analytics_df["coin_id"].isin(coins)].copy()
+        market = market_df[market_df["coin_id"].isin(coins)].copy()
+    else:
+        analytics = analytics_df.copy()
+        market = market_df.copy()
+
+    if metric == "Normalized Price":
+    # Use market prices (not analytics). Require price and coin_id columns.
+        if market.empty or "price_usd" not in market.columns:
+            st.warning("Price data not available in market data for normalized price comparison.")
+            return
+
+        # compute normalized price per coin and ensure coin_id column exists
+        norm_list = []
+        for coin, g in market.groupby("coin_id"):
+            g = g.sort_values("timestamp_utc").copy()
+            if g.empty or g["price_usd"].iloc[0] == 0:
+                continue
+            g = g.assign(norm_price=100.0 * g["price_usd"] / g["price_usd"].iloc[0])
+            norm_list.append(g[["coin_id", "timestamp_utc", "norm_price"]])
+
+        if not norm_list:
+            st.info("No valid market rows for selected coins/time window.")
+            return
+
+        norm_df = pd.concat(norm_list, ignore_index=True)
+
+        fig = px.line(
+            norm_df,
+            x="timestamp_utc",
+            y="norm_price",
+            color="coin_id",
+            title="Normalized Price (base = 100)",
+            labels={"norm_price": "Indexed price (100 = start)", "timestamp_utc": "Timestamp"},
+        )
+        fig.update_yaxes(title_text="Indexed Price")
+    else:
+        # Z-score comparison - source from analytics
+        if analytics.empty or "z_score" not in analytics.columns:
+            st.warning("Z-score not available in analytics for selected coins/time window.")
+            return
+
+        if mode == "Facets":
+            fig = px.line(
+                analytics.sort_values(["coin_id", "timestamp_utc"]),
+                x="timestamp_utc",
+                y="z_score",
+                color="coin_id",
+                facet_col="coin_id",
+                facet_col_wrap=2,
+                title="Z-score comparison (faceted by coin)",
+                labels={"z_score": "Z-score", "timestamp_utc": "Timestamp"},
+            )
+            fig.update_yaxes(matches=None)
+        else:  # Overlap
+            fig = px.line(
+                analytics.sort_values(["coin_id", "timestamp_utc"]),
+                x="timestamp_utc",
+                y="z_score",
+                color="coin_id",
+                title="Z-score comparison (overlap)",
+                labels={"z_score": "Z-score", "timestamp_utc": "Timestamp"},
+            )
+            fig.update_yaxes(title_text="Z-score")
+
+    fig.update_layout(hovermode="x unified", legend_title_text="Coin")
     st.plotly_chart(fig, use_container_width=True)
 
 
 def render_regime_timeline(analytics_df: pd.DataFrame):
     st.subheader("Volatility Regime Timeline")
-    if analytics_df.empty:
+    if analytics_df.empty or "volatility_regime" not in analytics_df.columns or "timestamp_utc" not in analytics_df.columns:
         st.warning("No analytics data available for regime timeline.")
         return
 
-    fig = px.scatter(
-        analytics_df,
-        x="timestamp_utc",
+    # Build contiguous segments per coin: start = current ts, end = next ts (or + small delta)
+    df = analytics_df.sort_values(["coin_id", "timestamp_utc"]).reset_index(drop=True)
+    segments = []
+    for coin, g in df.groupby("coin_id"):
+        g = g.reset_index(drop=True)
+        for i in range(len(g)):
+            start = g.loc[i, "timestamp_utc"]
+            end = g.loc[i + 1, "timestamp_utc"] if i + 1 < len(g) else start + pd.Timedelta(minutes=1)
+            segments.append({
+                "coin_id": coin,
+                "start": start,
+                "end": end,
+                "volatility_regime": g.loc[i, "volatility_regime"]
+            })
+
+    seg_df = pd.DataFrame(segments)
+    if seg_df.empty:
+        st.info("Not enough analytics rows to build regime timeline.")
+        return
+
+    # Use consistent regime order and colors
+    regime_order = ["Calm", "Elevated", "High", "Extreme"]
+    color_map = REGIME_COLORS
+
+    fig = px.timeline(
+        seg_df,
+        x_start="start",
+        x_end="end",
         y="coin_id",
         color="volatility_regime",
-        title="Volatility Regime Timeline",
-        labels={"timestamp_utc": "Timestamp", "coin_id": "Coin", "volatility_regime": "Regime"},
+        category_orders={"volatility_regime": regime_order},
+        color_discrete_map=color_map,
+        title="Volatility Regime Timeline (segments per coin)"
     )
-
-    for i in range(len(analytics_df) - 1):
-        regime = analytics_df["volatility_regime"].iloc[i]
-        fig.add_vrect(
-            x0=analytics_df["timestamp_utc"].iloc[i],
-            x1=analytics_df["timestamp_utc"].iloc[i + 1],
-            fillcolor=REGIME_COLORS.get(regime, "#ffffff"),
-            opacity=0.20,
-            line_width=0,
-        )
-
+    fig.update_yaxes(autorange="reversed")  # so first coin is on top
+    fig.update_layout(showlegend=True, height=300 + 80 * seg_df["coin_id"].nunique())
     st.plotly_chart(fig, use_container_width=True)
 
 

@@ -138,7 +138,9 @@ docker compose up -d postgres backfill pipeline dashboard
 
 ## Example Dashboard
 
-![img.png](img.png)
+![Dashboard1.png](Dashboard1.png)
+
+![Dashboard2.png](Dashboard2.png)
 
 ---
 

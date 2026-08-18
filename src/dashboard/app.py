@@ -47,6 +47,26 @@ market, analytics, alerts = filter_dashboard_data(
     severities=selected_severities,
 )
 
+# comparison datasets: same time window & severity filters, but no coin filter
+market_cmp, analytics_cmp, alerts_cmp = filter_dashboard_data(
+    market_df,
+    analytics_df,
+    alert_df,
+    coin=None,
+    time_window=time_window,
+    severities=selected_severities,
+)
+
+compare_enabled = st.sidebar.checkbox("Enable coin comparison", value=False)
+compare_metric = st.sidebar.selectbox("Compare metric", ["Z-score", "Normalized Price"])
+compare_mode = st.sidebar.selectbox("Display mode", ["Overlap", "Facets"], index=0)
+compare_coins = st.sidebar.multiselect(
+    "Coins to compare",
+    options=sorted(market_df["coin_id"].unique()),
+    default=[selected_coin] if not compare_enabled else sorted(market_df["coin_id"].unique()),
+    help="Select coins to include in the comparison (uses current time window)"
+)
+
 render_page_header()
 render_status_panel(market, analytics, alerts)
 
@@ -60,7 +80,18 @@ with right_col:
     render_alert_panel(alerts)
     render_alert_trend(alerts)
 
-render_comparison_chart(analytics_df)
-render_regime_timeline(analytics_df)
+if compare_enabled:
+    render_comparison_chart(
+        analytics_df=analytics_cmp,
+        market_df=market_cmp,
+        coins=compare_coins,
+        metric=compare_metric,
+        mode=compare_mode,
+    )
+else:
+    with st.expander("Coin comparison (disabled)"):
+        st.write("Enable 'coin comparison' in the sidebar to see multi-coin comparisons (respects the selected timeframe).")
+
+render_regime_timeline(analytics)
 
 render_raw_data_expanders(market, analytics, alerts)
