@@ -117,7 +117,7 @@ This reflects real-world risk behavior where sentiment amplifies volatility impa
 
 ### 1. Clone repository
 ```bash
-git clone git@github.com:Jack-McG496/crypto-portfolio.git
+git clone git@github.com:Jack-McG496/crypto-market-etl.git
 
 cd crypto-market-etl
 ```
