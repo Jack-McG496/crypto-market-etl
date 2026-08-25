@@ -2,7 +2,7 @@
 
 ## Overview
 
-A fully dockerised data pipeline that ingests cryptocurrency market data, computes rolling volatility indicators, detects abnormal market conditions 
+Docker-compose based data pipeline that ingests cryptocurrency market data, computes rolling volatility indicators, detects abnormal market conditions 
 using statistical thresholds adjusted by sentiment data, generates alerts based on sentiment, volatility and regime changes and visualizes results through a live dashboard. 
 
 ---
@@ -16,6 +16,21 @@ This project addresses the following questions:
 - Was is price movement statistically abnormal, not just volatile?
 - How does market sentiment (Fear & Greed Index) influence volatility risk?
 - Can we detect early signals of extreme market conditions?
+
+---
+
+## Current status (implementation snapshot)
+
+- [x] Extraction: CoinGecko + Fear & Greed fetchers exist (basic)
+- [x] Transformation: market -> processed CSVs + analytics functions exist
+- [x] Storage: Postgres schema + basic loaders exist
+- [x] Alerts: alert generation + Slack notifier (optional) exist
+- [x] Dashboard: Streamlit analytics dashboard
+- [x] Orchestration: Airflow DAG exists for core flow (needs hardening)
+- [ ] Reliability: retry/backoff and DLQ handling (partial / planned)
+- [ ] Observability: structured logs and pipeline run metadata (planned)
+- [ ] Production readiness: secrets handling, runbooks, and operational monitoring (planned)
+- [ ] Monitoring: operational health dashboard (planned)
 
 ---
 
@@ -48,14 +63,14 @@ This allows downstream use cases such as:
 ### Features
 
 - Extraction of multiple coins with **dynamic fetch function**
-- Fully **Dockerized, Airflow Orchestration, pipeline PostgreSQL and dashboard** for portability
+- **Docker, Airflow Orchestration, PostgreSQL and dashboard**
 - Historical backfill (90 days hourly data)
 - Incremental ingestion
 - Rolling volatility calculation
 - Z-score anomaly detection
 - Sentiment-aware thresholds
 - Persistent analytics store
-- Interactive dashboard
+- Interactive analytics dashboard
 - Scheduled execution
 - Slack notification alerts
 
@@ -127,11 +142,22 @@ python -m venv venv
 venv\Scripts\activate      # Windows
 source venv/bin/activate   # Mac/Linux
 ```
-### 3. Run Dockerised Pipeline with Airflow
+
+### 3. Config and environment
+```bash
+# Create local env file
+# Windows (PowerShell)
+copy .env.example .env
+# macOS / Linux
+cp .env.example .env
+# Then edit .env and fill API keys and secrets.
+```
+
+### 4.1. Run Dockerised Pipeline with Airflow
 ```bash
 docker compose --profile airflow up -d
 ```
-### 3.2. Run Dockerised Pipeline without Airflow
+### 4.2. Run Dockerised Pipeline without Airflow
 ```bash
 docker compose up -d postgres backfill pipeline dashboard
 ```
