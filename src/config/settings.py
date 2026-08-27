@@ -1,91 +1,110 @@
-from pathlib import Path
+# settings.py
+from __future__ import annotations
 import os
-from dotenv import load_dotenv
+import sys
+import uuid
+from datetime import datetime
+from typing import Optional, Literal
 
-load_dotenv()
+from pydantic import BaseModel, BaseSettings, Field, AnyUrl, ValidationError, validator
 
-def _get_env(name: str, default: str | None = None) -> str | None:
-    value = os.getenv(name, default)
-    if value is None:
-        return None
-    return value.strip() or None
 
-def _get_int_env(name: str, default: int) -> int:
-    value = _get_env(name)
-    if value is None:
-        return default
+class RetryConfig(BaseModel):
+    attempts: int = Field(3, ge=0, description="Number of retry attempts (0 = no retries)")
+    backoff_factor: float = Field(0.5, ge=0, description="Base backoff multiplier")
+    max_backoff_seconds: int = Field(60, ge=0, description="Maximum backoff delay in seconds")
+    jitter: bool = Field(True, description="Apply random jitter to backoff")
+    strategy: Literal["exponential", "linear", "fixed"] = Field(
+        "exponential", description="Backoff strategy"
+    )
 
+
+class Settings(BaseSettings):
+    # Environment
+    ENV: Literal["development", "staging", "production"] = Field(
+        "development", description="Runtime environment"
+    )
+    FAIL_FAST: bool = Field(True, description="Exit on missing/invalid configuration")
+
+    # External endpoints / keys
+    COINGECKO_API_URL: AnyUrl = Field("https://api.coingecko.com/api/v3", description="CoinGecko base URL")
+    FEAR_GREED_API_URL: Optional[AnyUrl] = Field(None, description="Fear & Greed index API URL")
+    COINGECKO_API_KEY: Optional[str] = Field(None, description="Optional CoinGecko API key")
+
+    # Database
+    POSTGRES_DSN: Optional[str] = Field(None, description="Postgres DSN (eg. postgres://user:pass@host/db)")
+
+    # Request / timeout / retry
+    REQUEST_TIMEOUT_SECONDS: int = Field(10, ge=0, description="Per-request timeout in seconds")
+    RETRY: RetryConfig = Field(default_factory=RetryConfig)
+
+    # RUN ID
+    RUN_ID: Optional[str] = Field(None, description="Explicit run id (overrides generation)")
+    RUN_ID_GENERATION: Literal["uuid4", "timestamp", "env"] = Field(
+        "uuid4",
+        description="How to generate `RUN_ID` when `RUN_ID` not provided. 'env' reads RUN_ID from env explicitly.",
+    )
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = False
+
+    @validator("RUN_ID", pre=True, always=True)
+    def build_run_id(cls, v, values):
+        if v:
+            return v
+        mode = values.get("RUN_ID_GENERATION", "uuid4")
+        if mode == "uuid4":
+            return uuid.uuid4().hex
+        if mode == "timestamp":
+            return datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+        if mode == "env":
+            env_val = os.getenv("RUN_ID")
+            if env_val:
+                return env_val
+            raise ValueError("RUN_ID_GENERATION='env' but environment variable RUN_ID is not set")
+        raise ValueError(f"Unsupported RUN_ID_GENERATION: {mode}")
+
+
+def get_settings() -> Settings:
+    """
+    Construct Settings with fail-fast behavior:
+    - If validation fails and FAIL_FAST is true (default), print errors and exit(1).
+    - If FAIL_FAST is false, re-raise the ValidationError for the caller to handle.
+    """
     try:
-        return int(value)
-    except ValueError as exc:
-        raise ValueError(f"{name} must be an integer, got: {value}") from exc
-
-REQUIRED_ENVS = [
-    "POSTGRES_HOST",
-    "POSTGRES_PORT",
-    "POSTGRES_DB",
-    "POSTGRES_USER",
-]
-
-def validate_settings(raise_on_missing: bool = True) -> list[str]:
-    missing = []
-    for name in REQUIRED_ENVS:
-        if _get_env(name) is None:
-            missing.append(name)
-    if missing and raise_on_missing:
-        raise RuntimeError(f"Missing required environment variables: {missing}")
-    return missing
-
-# Run validation at import-time in non-test flows (CI/tests may override)
-try:
-    validate_settings()
-except RuntimeError:
-    # allow tests/CI to import settings then override envs; re-raise only in production runs
-    if not (("pytest" in os.getenv("_", "") or "PYTEST_CURRENT_TEST" in os.environ) or os.getenv("CI")):
+        s = Settings()
+        # Example of additional explicit validation: required critical values in production
+        if s.ENV == "production":
+            missing = []
+            if not s.POSTGRES_DSN:
+                missing.append("POSTGRES_DSN")
+            if not s.COINGECKO_API_KEY:
+                # may be optional depending on provider; treat as required in production here
+                missing.append("COINGECKO_API_KEY")
+            if missing:
+                raise ValueError(f"Missing required config in production: {', '.join(missing)}")
+        return s
+    except ValidationError as exc:
+        # pydantic validation error
+        print("Configuration validation error:", file=sys.stderr)
+        print(exc, file=sys.stderr)
+        # decide fail-fast by environment override or default true
+        fail_fast = os.getenv("FAIL_FAST", "true").lower() in ("1", "true", "yes")
+        if fail_fast:
+            sys.exit(1)
+        raise
+    except Exception as exc:
+        print("Configuration error:", file=sys.stderr)
+        print(exc, file=sys.stderr)
+        fail_fast = os.getenv("FAIL_FAST", "true").lower() in ("1", "true", "yes")
+        if fail_fast:
+            sys.exit(1)
         raise
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = BASE_DIR / "data"
-RAW_DATA_DIR = DATA_DIR / "raw"
-PROCESSED_DATA_DIR = DATA_DIR / "processed"
 
-LOG_DIR = BASE_DIR / "logs"
-LOG_FILE = LOG_DIR / "etl.log"
-LOG_LEVEL = _get_env("LOG_LEVEL") or "INFO"
-RUN_ID = _get_env("RUN_ID")
-
-# Database
-DB_HOST = _get_env("POSTGRES_HOST", "localhost")
-DB_PORT = _get_int_env("POSTGRES_PORT", 5432)
-DB_NAME = _get_env("POSTGRES_DB", "crypto_db")
-DB_USER = _get_env("POSTGRES_USER", "crypto")
-DB_PASSWORD = _get_env("POSTGRES_PASSWORD", "crypto")
-
-# CoinGecko
-COINGECKO_API_KEY = _get_env("COINGECKO_API_KEY")
-COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3"
-COINGECKO_REQUEST_TIMEOUT = int(_get_env("COINGECKO_REQUEST_TIMEOUT") or 30)
-COINGECKO_REQUEST_RETRIES = int(_get_env("COINGECKO_REQUEST_RETRIES") or 3)
-COINGECKO_BACKOFF_BASE = float(_get_env("COINGECKO_BACKOFF_BASE") or 2)
-COINGECKO_REQUEST_PARAMETERS = {
-    "localization": "false",
-    "tickers": "false",
-    "market_data": "true",
-    "community_data": "false",
-    "developer_data": "false",
-    "sparkline": "false",
-}
-COIN_LIST = ["bitcoin", "ethereum"]
-BACKFILL_DAYS = 90
-RATE_LIMIT_SLEEP_TIME = float(_get_env("RATE_LIMIT_SLEEP_TIME") or 1.5)
-
-# Fear & Greed
-FEAR_GREED_API_URL = "https://api.alternative.me/fng/"
-FEAR_GREED_REQUEST_TIMEOUT = int(_get_env("FEAR_GREED_REQUEST_TIMEOUT") or 30)
-
-# Analytics
-ANOMALY_DETECTION_THRESHOLD = 3.0
-
-# Notifications
-SLACK_WEBHOOK_URL = _get_env("SLACK_WEBHOOK_URL")
-SLACK_TIMEOUT = int(_get_env("SLACK_TIMEOUT") or 10)
+# Common pattern: import settings via
+# from settings import get_settings
+# settings = get_settings()
+settings = get_settings()
