@@ -4,6 +4,7 @@ import os
 import sys
 import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import Optional, Literal
 
 from pydantic import BaseModel, BaseSettings, Field, AnyUrl, ValidationError, validator

@@ -3,13 +3,18 @@ from src.analytics.volatility_analysis import calculate_volatility_features
 from src.analytics.anomaly_detection import detect_anomalies
 from src.analytics.regime_detection import classify_volatility_regime
 from src.load.analytics_loader import load_analytics_data
+from src.pipelines.metrics import PipelineMetrics
 from src.utils.logger import get_logger
 import time
 
 logger = get_logger(__name__)
 
-def run_analytics_pipeline(sentiment_score: int, sentiment_label: str, metrics):
+
+def run_analytics_pipeline(sentiment_score: int, sentiment_label: str, metrics=None, run_id: str | None = None):
+    if metrics is None:
+        metrics = PipelineMetrics(run_id=run_id)
     start = time.perf_counter()
+    logger = get_logger(__name__, run_id=run_id, stage="analytics", task="analytics_pipeline")
 
     logger.info("Starting analytics pipeline")
 
@@ -31,8 +36,7 @@ def run_analytics_pipeline(sentiment_score: int, sentiment_label: str, metrics):
     logger.info(f"Analytics rows produced: {len(analytics_anomaly_df)}")
     logger.info(f"Analytics columns: {analytics_anomaly_df.columns.tolist()}")
 
-    # Load analytics
-    load_analytics_data(analytics_anomaly_df)
+    load_analytics_data(analytics_anomaly_df, run_id=run_id)
 
     logger.info("Analytics completed in %.2fs", time.perf_counter() - start)
 

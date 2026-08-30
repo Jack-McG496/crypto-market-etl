@@ -1,6 +1,7 @@
 from src.notifications.slack_notifier import send_slack_alert
 from src.load.alerts_loader import load_pending_alerts
 from src.load.alerts_loader import mark_alert_notified
+from src.pipelines.metrics import PipelineMetrics
 from src.utils.db import get_connection
 from src.utils.logger import get_logger
 import time
@@ -8,8 +9,11 @@ import time
 logger = get_logger(__name__)
 
 
-def run_notification_pipeline(metrics):
+def run_notification_pipeline(metrics=None, run_id: str | None = None):
+    if metrics is None:
+        metrics = PipelineMetrics(run_id=run_id)
     start = time.perf_counter()
+    logger = get_logger(__name__, run_id=run_id, stage="notifications", task="notification_pipeline")
     logger.info("Starting notification pipeline")
 
     sent = 0

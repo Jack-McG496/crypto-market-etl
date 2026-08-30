@@ -75,7 +75,7 @@ def write_dead_letter_event(source: str, stage: str, payload, error: str, run_id
         logger.exception("Failed to write dead-letter event for failed market-data batch")
 
 
-def load_market_data(df: pd.DataFrame):
+def load_market_data(df: pd.DataFrame, run_id: str | None = None):
     """
     Loads market data to market_data table.
     """

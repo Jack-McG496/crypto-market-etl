@@ -52,7 +52,7 @@ def normalize_alert_record(row):
     )
 
 
-def load_alert_data(df: pd.DataFrame):
+def load_alert_data(df: pd.DataFrame, run_id: str | None = None):
     """
     Loads alert data into alert table.
     """

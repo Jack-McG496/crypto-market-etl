@@ -5,7 +5,8 @@ import pandas as pd
 
 logger = get_logger(__name__)
 
-def load_analytics_data(df: pd.DataFrame):
+
+def load_analytics_data(df: pd.DataFrame, run_id: str | None = None):
     """
     Loads transformed analytics into volatility_alerts table.
     """

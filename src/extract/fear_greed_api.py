@@ -41,7 +41,7 @@ def _fg_get(url: str, **kwargs):
     return _do_get(url, timeout=REQUEST_TIMEOUT, params={}, **kwargs)
 
 
-def fetch_fear_greed_index(limit: int = 1) -> Dict[str, Any]:
+def fetch_fear_greed_index(limit: int = 1, run_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Fetch Crypto Fear & Greed Index with same retry/backoff/rate-limit/dead-letter behavior
     as the CoinGecko client. Raises PermanentAPIError or TransientAPIError on failure.
@@ -49,7 +49,6 @@ def fetch_fear_greed_index(limit: int = 1) -> Dict[str, Any]:
     try:
         url = _build_url(limit)
     except PermanentAPIError as exc:
-        # write dead-letter for misconfiguration and re-raise
         _write_dead_letter(
             source="fear_greed",
             payload={},
@@ -58,8 +57,9 @@ def fetch_fear_greed_index(limit: int = 1) -> Dict[str, Any]:
         )
         raise
 
+    logger = get_logger(__name__, run_id=run_id, stage="extract", task="fetch_fear_greed_index", coin_id="fear_greed")
     logger.info("Fetching Fear & Greed index (limit=%d)", limit)
-    result = _fg_get(url, coin="fear_greed")
+    result = _fg_get(url, coin="fear_greed", run_id=run_id, stage="extract", task="fetch_fear_greed_index")
     logger.info("Fetched Fear & Greed index")
     return result
 

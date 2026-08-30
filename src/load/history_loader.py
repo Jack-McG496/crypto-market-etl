@@ -19,7 +19,7 @@ def normalize_historical_record(row):
     )
 
 
-def load_historical_data(records: list):
+def load_historical_data(records: list, run_id: str | None = None):
 
     if not records:
         logger.warning("No historical data to load")

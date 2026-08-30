@@ -154,41 +154,55 @@ def retry_and_handle_rate_limits(func: Callable[..., requests.Response]) -> Call
     def wrapper(*args, **kwargs):
         attempts = int(RETRY_CFG.get("attempts", 3))
         last_exc: Optional[Exception] = None
+        run_id = kwargs.get("run_id")
+        source = kwargs.get("coin_id", kwargs.get("coin", "coingecko"))
+        stage = kwargs.get("stage", "api")
+        task = kwargs.get("task", "fetch")
         for attempt in range(1, attempts + 1):
             try:
                 resp = func(*args, **kwargs)
 
-                # If rate-limited, attempt to honor Retry-After and retry (classify as transient)
                 if _is_rate_limited(resp):
                     retry_after = _get_retry_after_seconds(resp)
                     delay = retry_after if retry_after is not None else _compute_backoff(attempt)
-                    logger.warning("Rate limited (429). Retry-After=%s; sleeping %.2fs", retry_after, delay)
+                    logger.warning(
+                        "Rate limited (429). Retry-After=%s; sleeping %.2fs",
+                        retry_after,
+                        delay,
+                        extra={"run_id": run_id, "stage": stage, "coin_id": source, "task": task, "reason": "rate_limited"},
+                    )
                     time.sleep(delay)
                     raise TransientAPIError(f"Rate limited: {resp.status_code}")
 
-                # 5xx -> transient
                 if 500 <= resp.status_code < 600:
-                    logger.warning("Server error %s on attempt %d", resp.status_code, attempt)
+                    logger.warning(
+                        "Server error %s on attempt %d",
+                        resp.status_code,
+                        attempt,
+                        extra={"run_id": run_id, "stage": stage, "coin_id": source, "task": task, "reason": "server_error"},
+                    )
                     raise TransientAPIError(f"Server error: {resp.status_code}")
 
-                # 4xx (except 429) -> permanent (client error)
                 if 400 <= resp.status_code < 500:
-                    logger.error("Client error %s; classifying as permanent", resp.status_code)
-                    # try to include body for dead-letter
+                    logger.error(
+                        "Client error %s; classifying as permanent",
+                        resp.status_code,
+                        extra={"run_id": run_id, "stage": stage, "coin_id": source, "task": task, "reason": "client_error"},
+                    )
                     try:
                         body = resp.json()
                     except Exception:
                         body = resp.text
                     _write_dead_letter(
-                        source=kwargs.get("coin_id", kwargs.get("coin", "coingecko")),
+                        source=source,
                         payload=body,
                         error=f"HTTP {resp.status_code}",
                         meta={"status_code": resp.status_code, "url": resp.url},
                         stage="api",
+                        run_id=run_id,
                     )
                     raise PermanentAPIError(f"Permanent HTTP error: {resp.status_code}")
 
-                # success
                 resp.raise_for_status()
                 try:
                     return resp.json()
@@ -200,15 +214,24 @@ def retry_and_handle_rate_limits(func: Callable[..., requests.Response]) -> Call
             except TransientAPIError as exc:
                 last_exc = exc
                 if attempt == attempts:
-                    logger.error("Exhausted retries due to transient error: %s", exc)
+                    logger.error(
+                        "Exhausted retries due to transient error: %s",
+                        exc,
+                        extra={"run_id": run_id, "stage": stage, "coin_id": source, "task": task, "reason": "transient_error"},
+                    )
                     raise
                 backoff = _compute_backoff(attempt)
-                logger.info("Transient error, attempt %d/%d — backing off %.2fs", attempt, attempts, backoff)
+                logger.info(
+                    "Transient error, attempt %d/%d — backing off %.2fs",
+                    attempt,
+                    attempts,
+                    backoff,
+                    extra={"run_id": run_id, "stage": stage, "coin_id": source, "task": task, "reason": "retry"},
+                )
                 time.sleep(backoff)
                 continue
             except requests.exceptions.RequestException as exc:
                 last_exc = exc
-                # classify some request exceptions as transient
                 transient = isinstance(
                     exc,
                     (
@@ -220,23 +243,35 @@ def retry_and_handle_rate_limits(func: Callable[..., requests.Response]) -> Call
                 )
                 if transient:
                     if attempt == attempts:
-                        logger.exception("Network/transient error, exhausted retries")
+                        logger.exception(
+                            "Network/transient error, exhausted retries",
+                            extra={"run_id": run_id, "stage": stage, "coin_id": source, "task": task, "reason": "network_error"},
+                        )
                         raise TransientAPIError(str(exc)) from exc
                     backoff = _compute_backoff(attempt)
-                    logger.info("Network error (%s). attempt %d/%d — sleeping %.2fs", type(exc).__name__, attempt, attempts, backoff)
+                    logger.info(
+                        "Network error (%s). attempt %d/%d — sleeping %.2fs",
+                        type(exc).__name__,
+                        attempt,
+                        attempts,
+                        backoff,
+                        extra={"run_id": run_id, "stage": stage, "coin_id": source, "task": task, "reason": "retry"},
+                    )
                     time.sleep(backoff)
                     continue
-                # treat other request exceptions as permanent
-                logger.exception("Non-transient request exception; writing dead-letter and failing")
+                logger.exception(
+                    "Non-transient request exception; writing dead-letter and failing",
+                    extra={"run_id": run_id, "stage": stage, "coin_id": source, "task": task, "reason": "permanent_error"},
+                )
                 _write_dead_letter(
-                    source=kwargs.get("coin_id", kwargs.get("coin", "coingecko")),
+                    source=source,
                     payload={},
                     error=str(exc),
                     meta={},
+                    run_id=run_id,
                 )
                 raise PermanentAPIError(str(exc)) from exc
 
-        # if we get here, re-raise last exception
         if last_exc:
             raise last_exc
         raise RuntimeError("Unexpected error in retry wrapper")
@@ -246,6 +281,7 @@ def retry_and_handle_rate_limits(func: Callable[..., requests.Response]) -> Call
 
 @retry_and_handle_rate_limits
 def _do_get(url: str, **kwargs) -> requests.Response:
+    run_id = kwargs.pop("run_id", None)
     headers = kwargs.pop("headers", {}) or {}
     if API_KEY:
         headers.setdefault("x-cg-pro-api-key", API_KEY)
@@ -254,15 +290,16 @@ def _do_get(url: str, **kwargs) -> requests.Response:
     return requests.get(url, headers=headers, params=params, timeout=timeout, **kwargs)
 
 
-def fetch_coin_market_data(coin_id: str) -> Dict[str, Any]:
+def fetch_coin_market_data(coin_id: str, run_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Fetch current market data from CoinGecko, with retries, rate-limit handling,
     transient/permanent classification, and dead-letter writes for permanent failures.
     Raises TransientAPIError (after retries) or PermanentAPIError.
     """
     url = f"{BASE_URL.rstrip('/')}/coins/{coin_id}"
+    logger = get_logger(__name__, run_id=run_id, stage="extract", task="fetch_coin_market_data", coin_id=coin_id)
     logger.info("Fetching CoinGecko market data for %s", coin_id)
-    result = _do_get(url, coin_id=coin_id)
+    result = _do_get(url, coin_id=coin_id, run_id=run_id, stage="extract", task="fetch_coin_market_data")
     logger.info("Fetched CoinGecko market data for %s", coin_id)
     return result
 

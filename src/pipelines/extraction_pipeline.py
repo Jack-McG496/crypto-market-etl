@@ -8,19 +8,21 @@ logger = get_logger(__name__)
 
 coins = COIN_LIST
 
-def run_extraction_pipeline():
+
+def run_extraction_pipeline(run_id: str | None = None):
     start = time.perf_counter()
+    logger = get_logger(__name__, run_id=run_id, stage="extract", task="extraction_pipeline")
 
     logger.info("Starting extraction pipeline")
 
     for coin in coins:
         try:
-            data = fetch_coin_market_data(coin)
+            data = fetch_coin_market_data(coin, run_id=run_id)
         except PermanentAPIError as exc:
-            logger.error("Permanent failure fetching %s: %s", coin, exc)
+            logger.error("Permanent failure fetching %s: %s", coin, exc, extra={"coin_id": coin, "task": "fetch_market"})
             continue
         except Exception:
-            logger.exception("Unexpected error fetching %s; skipping", coin)
+            logger.exception("Unexpected error fetching %s; skipping", coin, extra={"coin_id": coin, "task": "fetch_market"})
             continue
 
         save_raw_json(data, source_name=f"coingecko_{coin}")
@@ -29,7 +31,7 @@ def run_extraction_pipeline():
 
     start = time.perf_counter()
     try:
-        fg_data = fetch_fear_greed_index(limit=1)
+        fg_data = fetch_fear_greed_index(limit=1, run_id=run_id)
     except Exception:
         logger.exception("Unexpected error fetching fear and greed index; skipping")
         fg_data = None
