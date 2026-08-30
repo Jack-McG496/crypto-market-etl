@@ -94,6 +94,8 @@ def _write_dead_letter(
     payload: Any,
     error: str,
     meta: Optional[Dict[str, Any]] = None,
+    stage: str = "unknown",
+    run_id: Optional[str] = None,
 ) -> None:
     DEAD_LETTER_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
@@ -101,10 +103,12 @@ def _write_dead_letter(
     path = DEAD_LETTER_DIR / filename
     body = {
         "source": source,
+        "stage": stage,
         "timestamp_utc": timestamp,
         "error": error,
         "meta": meta or {},
         "payload": payload,
+        "run_id": run_id,
     }
     try:
         with path.open("w", encoding="utf-8") as fh:
@@ -125,22 +129,23 @@ def _write_dead_letter(
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        CREATE TABLE IF NOT EXISTS dead_letters (
+                        CREATE TABLE IF NOT EXISTS dead_letter_events (
                             id SERIAL PRIMARY KEY,
-                            source TEXT,
-                            payload JSONB,
-                            error TEXT,
-                            meta JSONB,
-                            created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+                            source TEXT NOT NULL,
+                            stage TEXT NOT NULL,
+                            payload JSONB NOT NULL,
+                            error TEXT NOT NULL,
+                            created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+                            run_id TEXT
                         )
                         """
                     )
                     cur.execute(
-                        "INSERT INTO dead_letters (source, payload, error, meta) VALUES (%s, %s, %s, %s)",
-                        (source, Json(payload), error, Json(meta or {})),
+                        "INSERT INTO dead_letter_events (source, stage, payload, error, run_id) VALUES (%s, %s, %s, %s, %s)",
+                        (source, stage, Json(payload), error, run_id),
                     )
             conn.close()
-            logger.warning("Inserted dead-letter into DB (dead_letters)")
+            logger.warning("Inserted dead-letter into DB (dead_letter_events)")
         except Exception:
             logger.exception("Failed to write dead-letter to DB; file already created as fallback.")
 
@@ -179,6 +184,7 @@ def retry_and_handle_rate_limits(func: Callable[..., requests.Response]) -> Call
                         payload=body,
                         error=f"HTTP {resp.status_code}",
                         meta={"status_code": resp.status_code, "url": resp.url},
+                        stage="api",
                     )
                     raise PermanentAPIError(f"Permanent HTTP error: {resp.status_code}")
 

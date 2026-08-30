@@ -134,11 +134,11 @@ def run_transform(coins: list[str], run_id: Optional[str] = None) -> pd.DataFram
             continue
         except KeyError as e:
             logger.warning("Missing expected field for %s: %s; skipping", coin, e)
-            _write_dead_letter(source=coin, payload=raw_data, error=f"KeyError: {e}", meta={"source_file": str(raw_path)})
+            _write_dead_letter(source=coin, payload=raw_data, error=f"KeyError: {e}", meta={"source_file": str(raw_path)}, stage="transform", run_id=run_id)
             continue
         except Exception:
             logger.exception("Unexpected error transforming %s; sending to dead-letter", coin)
-            _write_dead_letter(source=coin, payload=raw_data, error="Unexpected transform error", meta={"source_file": str(raw_path)})
+            _write_dead_letter(source=coin, payload=raw_data, error="Unexpected transform error", meta={"source_file": str(raw_path)}, stage="transform", run_id=run_id)
             continue
 
     df = pd.DataFrame(rows)

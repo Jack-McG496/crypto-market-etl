@@ -7,6 +7,7 @@ import time
 
 logger = get_logger(__name__)
 
+
 def run_notification_pipeline(metrics):
     start = time.perf_counter()
     logger.info("Starting notification pipeline")
@@ -23,15 +24,23 @@ def run_notification_pipeline(metrics):
 
     conn = get_connection()
 
-    for _, alert in pending_alerts.iterrows():
-
-        success = send_slack_alert(alert)
-
-        if success:
-            sent += 1
-            mark_alert_notified(conn, alert["id"])
-        else:
-            failed += 1
+    try:
+        for _, alert in pending_alerts.iterrows():
+            try:
+                success = send_slack_alert(alert)
+                if success:
+                    with conn:
+                        mark_alert_notified(conn, alert["id"])
+                    sent += 1
+                else:
+                    failed += 1
+                    logger.warning("Notification failed for alert %s", alert.get("id"))
+            except Exception:
+                failed += 1
+                conn.rollback()
+                logger.exception("Failed to notify alert %s", alert.get("id"))
+    finally:
+        conn.close()
 
     logger.info("Notifications complete | sent=%d failed=%d", sent, failed)
     metrics.notifications_sent = sent

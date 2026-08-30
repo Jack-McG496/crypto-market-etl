@@ -1,8 +1,23 @@
+from datetime import datetime
+
 from psycopg2.extras import execute_batch
 from src.utils.db import get_connection
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+def normalize_historical_record(row):
+    return (
+        row["coin_id"],
+        row.get("timestamp_utc"),
+        row["price_usd"],
+        row.get("volume_24h"),
+        row.get("ingested_at") or row.get("ingestion_timestamp_utc") or datetime.utcnow(),
+        row.get("source_file") or row.get("raw_file"),
+        row.get("run_id"),
+    )
+
 
 def load_historical_data(records: list):
 
@@ -15,22 +30,22 @@ def load_historical_data(records: list):
         coin_id,
         timestamp_utc,
         price_usd,
-        volume_24h
+        volume_24h,
+        ingested_at,
+        source_file,
+        run_id
     )
-    VALUES (%s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
     ON CONFLICT (coin_id, timestamp_utc)
-    DO NOTHING;
+    DO UPDATE SET
+        price_usd = EXCLUDED.price_usd,
+        volume_24h = EXCLUDED.volume_24h,
+        ingested_at = EXCLUDED.ingested_at,
+        source_file = EXCLUDED.source_file,
+        run_id = EXCLUDED.run_id;
     """
 
-    values = [
-        (
-            r["coin_id"],
-            r["timestamp_utc"],
-            r["price_usd"],
-            r["volume_24h"]
-        )
-        for r in records
-    ]
+    values = [normalize_historical_record(r) for r in records]
 
     conn = get_connection()
 

@@ -5,6 +5,7 @@ import pandas as pd
 
 logger = get_logger(__name__)
 
+
 def ensure_alerts_table_schema(conn):
     with conn.cursor() as cur:
         cur.execute("""
@@ -28,6 +29,29 @@ def ensure_alerts_table_schema(conn):
     return conn
 
 
+def validate_alert_record(row):
+    required = ["coin_id", "alert_type", "severity", "message"]
+    missing = [key for key in required if row.get(key) is None or str(row.get(key)).strip() == ""]
+    if missing:
+        raise ValueError(f"Missing required alert fields: {missing}")
+    return True
+
+
+def normalize_alert_record(row):
+    validate_alert_record(row)
+    created_at = row.get("created_at") or pd.Timestamp.utcnow()
+    analytics_timestamp = row.get("analytics_timestamp") or created_at
+    return (
+        row["coin_id"],
+        row["alert_type"],
+        row["severity"],
+        row["message"],
+        created_at,
+        analytics_timestamp,
+        bool(row.get("notified", False)),
+    )
+
+
 def load_alert_data(df: pd.DataFrame):
     """
     Loads alert data into alert table.
@@ -47,24 +71,29 @@ def load_alert_data(df: pd.DataFrame):
             severity,
             message,
             created_at,
-            analytics_timestamp
+            analytics_timestamp,
+            notified
         )
-        VALUES (%s,%s,%s,%s,%s,%s)
+        VALUES (%s,%s,%s,%s,%s,%s,%s)
         ON CONFLICT (coin_id, created_at)
-        DO NOTHING;
+        DO UPDATE SET
+            alert_type = EXCLUDED.alert_type,
+            severity = EXCLUDED.severity,
+            message = EXCLUDED.message,
+            analytics_timestamp = EXCLUDED.analytics_timestamp,
+            notified = alerts.notified OR EXCLUDED.notified;
         """
 
-        records = [
-            (
-                row["coin_id"],
-                row["alert_type"],
-                row["severity"],
-                row["message"],
-                row["created_at"],
-                row["analytics_timestamp"]
-            )
-            for _, row in df.iterrows()
-        ]
+        records = []
+        for _, row in df.iterrows():
+            try:
+                records.append(normalize_alert_record(row))
+            except ValueError as exc:
+                logger.warning("Skipping invalid alert row: %s | error=%s", row.to_dict(), exc)
+
+        if not records:
+            logger.warning("No valid alert rows to load after validation")
+            return
 
         with conn.cursor() as cur:
             execute_batch(cur, insert_sql, records, page_size=100)
@@ -101,13 +130,14 @@ def load_pending_alerts() -> pd.DataFrame:
 
 def mark_alert_notified(conn, alert_id: str):
     query = """
-    UPDATE alerts SET notified = TRUE WHERE id = %s;
+    UPDATE alerts
+    SET notified = TRUE
+    WHERE id = %s AND notified IS DISTINCT FROM TRUE;
     """
 
     try:
         with conn.cursor() as cur:
             cur.execute(query, (alert_id,))
-        conn.commit()
     except Exception:
         conn.rollback()
         logger.exception("Failed to update alert data")
