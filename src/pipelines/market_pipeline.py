@@ -26,7 +26,7 @@ def run_market_pipeline(metrics=None, run_id: str | None = None):
 
     load_market_data(market_df, run_id=run_id)
 
-    sentiment_df = run_fear_greed_transform(run_id=run_id)
+    sentiment_df = run_fear_greed_transform()
     save_fear_greed_processed_data(sentiment_df)
 
     logger.info("Market data pipeline completed")

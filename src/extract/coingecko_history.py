@@ -14,26 +14,64 @@ def fetch_historical_prices(coin_id: str, days=90) -> list:
 
     logger.info(f"Fetching {days} days history for {coin_id}")
 
-    url = f"{COINGECKO_BASE_URL}/coins/{coin_id}/market_chart"
+    base = COINGECKO_BASE_URL
+    # If a CoinGecko PRO API key is provided, prefer the pro base URL when the
+    # configured base is the public API. This avoids 400 errors when a pro key
+    # is presented to the public endpoint.
+    base_str = str(base or "")
+    if COINGECKO_API_KEY and "pro-api" not in base_str and "api.coingecko.com" in base_str:
+        base = "https://pro-api.coingecko.com/api/v3"
+
+    url = f"{base}/coins/{coin_id}/market_chart"
 
     params = {
         "vs_currency": "usd",
         "days": days
     }
 
-    headers = {
-        "x-cg-pro-api-key": COINGECKO_API_KEY
-    }
+    headers = {}
+    if COINGECKO_API_KEY:
+        headers["x-cg-pro-api-key"] = COINGECKO_API_KEY
 
     response = requests.get(
         url,
         params=params,
         headers=headers,
-        timeout=COINGECKO_REQUEST_TIMEOUT
+        timeout=COINGECKO_REQUEST_TIMEOUT,
     )
 
+    # Debug output
     print("Status:", response.status_code)
-    print("Response:", response.text[:500])  # debug
+    print("Response:", response.text[:500])
+
+    # Some CoinGecko API keys (demo vs pro) require using a different root URL.
+    # If the provider returns a 400 with a message suggesting switching the
+    # root URL, attempt the request again with the alternative base.
+    if response.status_code == 400:
+        try:
+            body = response.json()
+            msg = body.get("status", {}).get("error_message", "") or body.get("error_message", "")
+        except Exception:
+            msg = response.text
+
+        if "change your root URL" in str(msg):
+            # flip between pro and public endpoints
+            alt_base = (
+                "https://api.coingecko.com/api/v3"
+                if "pro-api" in url
+                else "https://pro-api.coingecko.com/api/v3"
+            )
+            alt_url = f"{alt_base}/coins/{coin_id}/market_chart"
+            headers_alt = headers.copy()
+            # retry the alternate URL once
+            response = requests.get(
+                alt_url,
+                params=params,
+                headers=headers_alt,
+                timeout=COINGECKO_REQUEST_TIMEOUT,
+            )
+            print("Retry Status:", response.status_code)
+            print("Retry Response:", response.text[:500])
 
     response.raise_for_status()
 

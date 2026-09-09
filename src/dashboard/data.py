@@ -41,6 +41,29 @@ def load_data():
     analytics_df = pd.read_sql(analytics_query, conn)
     alert_df = pd.read_sql(alert_query, conn)
 
+    # Operational tables: pipeline runs and dead letter queue events
+    try:
+        pipeline_query = """
+            SELECT *
+            FROM pipeline_runs
+            ORDER BY started_at DESC
+            LIMIT 500;
+        """
+        pipeline_df = pd.read_sql(pipeline_query, conn)
+    except Exception:
+        pipeline_df = pd.DataFrame()
+
+    try:
+        dlq_query = """
+            SELECT *
+            FROM dead_letter_events
+            ORDER BY created_at DESC
+            LIMIT 500;
+        """
+        dlq_df = pd.read_sql(dlq_query, conn)
+    except Exception:
+        dlq_df = pd.DataFrame()
+
     conn.close()
 
     if "timestamp_utc" in market_df.columns:
@@ -52,7 +75,15 @@ def load_data():
     if "created_at" in alert_df.columns:
         alert_df["created_at"] = pd.to_datetime(alert_df["created_at"], utc=True)
 
-    return market_df, analytics_df, alert_df
+    if not pipeline_df.empty and "started_at" in pipeline_df.columns:
+        pipeline_df["started_at"] = pd.to_datetime(pipeline_df["started_at"], utc=True)
+    if not pipeline_df.empty and "ended_at" in pipeline_df.columns:
+        pipeline_df["ended_at"] = pd.to_datetime(pipeline_df["ended_at"], utc=True)
+
+    if not dlq_df.empty and "created_at" in dlq_df.columns:
+        dlq_df["created_at"] = pd.to_datetime(dlq_df["created_at"], utc=True)
+
+    return market_df, analytics_df, alert_df, pipeline_df, dlq_df
 
 
 def filter_dashboard_data(

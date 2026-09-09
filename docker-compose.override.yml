@@ -1,0 +1,23 @@
+services:
+  dashboard:
+    # Mount project source into container for rapid development (no rebuild for code changes)
+    volumes:
+      - ./src:/app/src:rw
+      - ./requirements.txt:/app/requirements.txt:ro
+      - ./README.md:/app/README.md:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Optional: keep the same entrypoint/command defined in docker-compose.yml so runtime is unchanged
+  pipeline:
+    volumes:
+      - ./src:/app/src:rw
+      - ./requirements.txt:/app/requirements.txt:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  backfill:
+    volumes:
+      - ./src:/app/src:rw
+      - ./requirements.txt:/app/requirements.txt:ro
+    environment:
+      - PYTHONUNBUFFERED=1

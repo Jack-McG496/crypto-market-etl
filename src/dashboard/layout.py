@@ -2,6 +2,7 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 from src.dashboard.constants import REGIME_COLORS
+import datetime
 
 
 def render_page_header():
@@ -272,3 +273,83 @@ def render_raw_data_expanders(
 
     with st.expander("Alert data (latest 50 rows)"):
         st.dataframe(alert_df.sort_values("created_at", ascending=False).head(50))
+
+
+def render_operational_panel(pipeline_df: pd.DataFrame, dlq_df: pd.DataFrame, alert_df: pd.DataFrame):
+    st.subheader("Operational / Health")
+
+    now = pd.Timestamp.utcnow()
+
+    if pipeline_df.empty:
+        st.info("No pipeline run data available (pipeline_runs table missing or empty).")
+        return
+
+    # Last successful run across pipelines
+    if "status" in pipeline_df.columns and "ended_at" in pipeline_df.columns:
+        success_mask = pipeline_df["status"].str.lower() == "success"
+        last_success = pipeline_df.loc[success_mask, "ended_at"].max() if success_mask.any() else None
+    else:
+        last_success = None
+
+    last_success_str = last_success.strftime("%Y-%m-%d %H:%M:%S %Z") if pd.notna(last_success) else "No successful runs"
+
+    # Freshness lag: time since last successful run
+    if pd.notna(last_success):
+        lag = now - last_success
+        # show in human readable
+        lag_str = str(lag).split(".")[0]
+    else:
+        lag_str = "N/A"
+
+    pending_alerts = len(alert_df) if alert_df is not None else 0
+
+    # Recent failures
+    recent_failures = pd.DataFrame()
+    if "status" in pipeline_df.columns:
+        fail_mask = pipeline_df["status"].str.lower().isin(["failed", "error"]) if not pipeline_df.empty else pd.Series(dtype=bool)
+        recent_failures = pipeline_df[fail_mask].sort_values("started_at", ascending=False).head(10)
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Last successful run", last_success_str)
+    c2.metric("Freshness lag", lag_str)
+    c3.metric("Pending alerts", pending_alerts)
+    c4.metric("Recent failures", len(recent_failures))
+
+    if not recent_failures.empty:
+        with st.expander("Recent pipeline failures (latest)"):
+            cols = [c for c in ["pipeline_id", "run_id", "status", "started_at", "ended_at", "message"] if c in recent_failures.columns]
+            st.dataframe(recent_failures[cols].reset_index(drop=True), use_container_width=True)
+
+
+def render_dead_letter_view(dlq_df: pd.DataFrame):
+    st.subheader("Dead Letter Queue (recent)")
+    if dlq_df is None or dlq_df.empty:
+        st.info("No dead-letter events found.")
+        return
+
+    df = dlq_df.copy()
+    # Provide a short payload preview for quick triage
+    if "payload" in df.columns:
+        df["payload_preview"] = df["payload"].astype(str).str.slice(0, 200)
+    elif "data" in df.columns:
+        df["payload_preview"] = df["data"].astype(str).str.slice(0, 200)
+    else:
+        df["payload_preview"] = "(no payload column)"
+
+    display_cols = [c for c in ["created_at", "event_type", "source", "payload_preview"] if c in df.columns]
+    st.dataframe(df[display_cols].sort_values("created_at", ascending=False).head(50), use_container_width=True)
+
+
+def render_replay_section():
+    st.subheader("Replay Dead-Letter Events")
+    st.markdown(
+        """
+        Manual replay instructions:
+
+        - Inspect the dead-letter events above and identify the `run_id` or `event id` you want to replay.
+        - Use the pipeline's CLI or admin UI to re-submit the payload to the ingestion topic or re-run the failed job.
+        - Verify processing by checking `pipeline_runs` for a new successful run and the `market_data` table for expected output.
+
+        For detailed guidance and examples, see the project docs: [Replaying Dead-Letter Events](README.md#replaying-dead-letter-events)
+        """
+    )

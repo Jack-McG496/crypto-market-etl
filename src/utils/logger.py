@@ -40,6 +40,8 @@ class ContextFilter(logging.Filter):
         message = record.getMessage()
         if ordered:
             record.msg = " ".join(ordered) + f" message={message}"
+            # clear args to avoid formatting against previous placeholders
+            record.args = ()
             record.message = record.getMessage()
         return True
 

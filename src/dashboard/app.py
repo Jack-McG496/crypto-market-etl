@@ -11,11 +11,14 @@ from src.dashboard.layout import (
     render_alert_panel,
     render_alert_trend,
     render_raw_data_expanders,
+    render_operational_panel,
+    render_dead_letter_view,
+    render_replay_section,
 )
 
 st.set_page_config(page_title="Crypto Volatility Monitor", layout="wide")
 
-market_df, analytics_df, alert_df = load_data()
+market_df, analytics_df, alert_df, pipeline_df, dlq_df = load_data()
 
 if market_df.empty or analytics_df.empty:
     st.error("No market or analytics data available. Confirm that the pipeline is writing to the database.")
@@ -69,6 +72,13 @@ compare_coins = st.sidebar.multiselect(
 
 render_page_header()
 render_status_panel(market, analytics, alerts)
+render_operational_panel(pipeline_df, dlq_df, alerts)
+
+# Dead-letter queue view (visible by default)
+render_dead_letter_view(dlq_df)
+
+# Replay instructions + docs link
+render_replay_section()
 
 left_col, right_col = st.columns([2, 1])
 
