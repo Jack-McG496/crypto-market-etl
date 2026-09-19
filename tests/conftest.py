@@ -1,6 +1,9 @@
 import os
+from pathlib import Path
+from urllib.parse import urlparse
 
 import pandas as pd
+import psycopg2
 import pytest
 
 from src.utils.db import get_connection
@@ -11,6 +14,36 @@ def pytest_configure(config):
         "markers",
         "integration: mark test as integration requiring external services"
     )
+    config.addinivalue_line(
+        "markers",
+        "smoke: mark test as a minimal end-to-end pipeline smoke test using the test database"
+    )
+
+
+def _ensure_test_schema(database_url: str):
+    parsed = urlparse(database_url)
+    db_name = parsed.path.lstrip("/") or "postgres"
+    admin_url = database_url.rsplit("/", 1)[0] + "/postgres"
+
+    admin_conn = psycopg2.connect(admin_url)
+    try:
+        with admin_conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (db_name,))
+            if not cur.fetchone():
+                cur.execute(f'CREATE DATABASE "{db_name}"')
+        admin_conn.commit()
+    finally:
+        admin_conn.close()
+
+    conn = get_connection(database_url)
+    try:
+        schema_sql = (Path(__file__).resolve().parents[1] / "sql" / "schema.sql").read_text(encoding="utf-8")
+        with conn.cursor() as cur:
+            cur.execute(schema_sql)
+        conn.commit()
+    finally:
+        conn.close()
+
 
 @pytest.fixture(scope="function")
 def db_transaction(db_connection):
@@ -20,14 +53,18 @@ def db_transaction(db_connection):
     db_connection.rollback()
     cursor.close()
 
+
 @pytest.fixture(scope="session")
 def database_url():
     return os.getenv("TEST_DATABASE_URL")
+
 
 @pytest.fixture(scope="session")
 def db_connection(database_url):
     if not database_url:
         pytest.skip("Skipping integration tests because TEST_DATABASE_URL is not set")
+
+    _ensure_test_schema(database_url)
     conn = get_connection(database_url)
     yield conn
     conn.close()

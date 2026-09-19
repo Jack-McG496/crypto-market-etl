@@ -153,11 +153,55 @@ cp .env.example .env
 # Then edit .env and fill API keys and secrets.
 ```
 
-### 4.1. Run Dockerised Pipeline with Airflow
+### 4. Local Postgres for integration tests
+Start a local PostgreSQL instance and apply the schema before running integration tests.
+
+```bash
+# Windows (PowerShell)
+docker compose up -d postgres
+
+# Optional: if you want the project database to match the CI defaults
+$env:TEST_DATABASE_URL = "postgresql://postgres:password@localhost:5432/testdb"
+$env:POSTGRES_HOST = "localhost"
+$env:POSTGRES_PORT = "5432"
+$env:POSTGRES_DB = "testdb"
+$env:POSTGRES_USER = "postgres"
+$env:POSTGRES_PASSWORD = "password"
+
+# Apply schema
+psql "postgresql://postgres:password@localhost:5432/testdb" -f sql/schema.sql
+```
+
+```bash
+# macOS / Linux
+export TEST_DATABASE_URL="postgresql://postgres:password@localhost:5432/testdb"
+export POSTGRES_HOST="localhost"
+export POSTGRES_PORT="5432"
+export POSTGRES_DB="testdb"
+export POSTGRES_USER="postgres"
+export POSTGRES_PASSWORD="password"
+
+docker compose up -d postgres
+psql "$TEST_DATABASE_URL" -f sql/schema.sql
+```
+
+### 5. Run integration tests
+```bash
+# Unit tests
+pytest -m "not integration" tests/unit
+
+# Integration tests (requires local Postgres and schema)
+pytest -m integration tests/integration
+
+# Smoke test
+pytest --no-cov -m smoke tests/integration/test_smoke_pipeline.py -q
+```
+
+### 6.1. Run Dockerised Pipeline with Airflow
 ```bash
 docker compose --profile airflow up -d
 ```
-### 4.2. Run Dockerised Pipeline without Airflow
+### 6.2. Run Dockerised Pipeline without Airflow
 ```bash
 docker compose up -d postgres backfill pipeline dashboard
 ```
