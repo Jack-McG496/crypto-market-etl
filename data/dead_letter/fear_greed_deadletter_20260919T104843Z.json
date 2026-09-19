@@ -1,0 +1,9 @@
+{
+  "source": "fear_greed",
+  "stage": "unknown",
+  "timestamp_utc": "20260919T104843Z",
+  "error": "FEAR_GREED_API_URL not configured",
+  "meta": {},
+  "payload": {},
+  "run_id": null
+}

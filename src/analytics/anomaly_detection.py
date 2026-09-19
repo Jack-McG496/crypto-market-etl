@@ -1,6 +1,7 @@
+import pandas as pd
+
 from src.config.settings import ANOMALY_DETECTION_THRESHOLD
 from src.utils.logger import get_logger
-import pandas as pd
 
 logger = get_logger(__name__)
 

@@ -1,5 +1,7 @@
-import pandas as pd
 from datetime import datetime
+
+import pandas as pd
+
 from src.utils import logger
 
 logger = logger.get_logger(__name__)

@@ -1,15 +1,15 @@
 import json
-import time
 import random
-import logging
+import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Callable
+from typing import Any
 
 import requests
 
-from src.utils.logger import get_logger
 from src.config.settings import settings
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -27,10 +27,10 @@ def _get_setting(attr: str, default: Any = None) -> Any:
 
 
 # Backwards-compatible config extraction (older code referenced different names)
-BASE_URL: str = _get_setting("COINGECKO_API_URL", _get_setting("COINGECKO_BASE_URL", "https://api.coingecko.com/api/v3"))
-API_KEY: Optional[str] = _get_setting("COINGECKO_API_KEY", None)
+BASE_URL: str = str(_get_setting("COINGECKO_API_URL", _get_setting("COINGECKO_BASE_URL", "https://api.coingecko.com/api/v3")))
+API_KEY: str | None = _get_setting("COINGECKO_API_KEY", None)
 REQUEST_TIMEOUT: float = _get_setting("REQUEST_TIMEOUT_SECONDS", _get_setting("COINGECKO_REQUEST_TIMEOUT", 10))
-REQUEST_PARAMS: Dict[str, Any] = _get_setting("COINGECKO_REQUEST_PARAMETERS", {})
+REQUEST_PARAMS: dict[str, Any] = _get_setting("COINGECKO_REQUEST_PARAMETERS", {})
 RAW_DATA_DIR: Path = Path(_get_setting("RAW_DATA_DIR", "data/raw"))
 DEAD_LETTER_DIR: Path = Path(_get_setting("DEAD_LETTER_DIR", "data/dead_letter"))
 COINS = _get_setting("COIN_LIST", [])
@@ -46,12 +46,21 @@ if RETRY_CFG is None:
     }
 
 
+def _retry_cfg_value(key: str, default: Any) -> Any:
+    if isinstance(RETRY_CFG, dict):
+        return RETRY_CFG.get(key, default)
+    if hasattr(RETRY_CFG, "model_dump"):
+        return RETRY_CFG.model_dump().get(key, default)
+    if hasattr(RETRY_CFG, "dict"):
+        return RETRY_CFG.dict().get(key, default)
+    return default
+
+
 def _compute_backoff(attempt: int) -> float:
-    attempts = int(RETRY_CFG.get("attempts", 3))
-    factor = float(RETRY_CFG.get("backoff_factor", 0.5))
-    max_backoff = float(RETRY_CFG.get("max_backoff_seconds", 60))
-    jitter = bool(RETRY_CFG.get("jitter", True))
-    strategy = RETRY_CFG.get("strategy", "exponential")
+    factor = float(_retry_cfg_value("backoff_factor", 0.5))
+    max_backoff = float(_retry_cfg_value("max_backoff_seconds", 60))
+    jitter = bool(_retry_cfg_value("jitter", True))
+    strategy = _retry_cfg_value("strategy", "exponential")
 
     if strategy == "fixed":
         backoff = factor
@@ -70,7 +79,7 @@ def _is_rate_limited(resp: requests.Response) -> bool:
     return resp.status_code == 429
 
 
-def _get_retry_after_seconds(resp: requests.Response) -> Optional[float]:
+def _get_retry_after_seconds(resp: requests.Response) -> float | None:
     header = resp.headers.get("Retry-After")
     if not header:
         return None
@@ -93,14 +102,16 @@ def _write_dead_letter(
     source: str,
     payload: Any,
     error: str,
-    meta: Optional[Dict[str, Any]] = None,
+    meta: dict[str, Any] | None = None,
     stage: str = "unknown",
-    run_id: Optional[str] = None,
+    run_id: str | None = None,
+    dead_letter_dir: Path | None = None,
 ) -> None:
-    DEAD_LETTER_DIR.mkdir(parents=True, exist_ok=True)
+    target_dir = Path(dead_letter_dir) if dead_letter_dir is not None else DEAD_LETTER_DIR
+    target_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
     filename = f"{source}_deadletter_{timestamp}.json"
-    path = DEAD_LETTER_DIR / filename
+    path = target_dir / filename
     body = {
         "source": source,
         "stage": stage,
@@ -152,12 +163,13 @@ def _write_dead_letter(
 
 def retry_and_handle_rate_limits(func: Callable[..., requests.Response]) -> Callable[..., Any]:
     def wrapper(*args, **kwargs):
-        attempts = int(RETRY_CFG.get("attempts", 3))
-        last_exc: Optional[Exception] = None
+        attempts = int(_retry_cfg_value("attempts", 3))
+        last_exc: Exception | None = None
         run_id = kwargs.get("run_id")
         source = kwargs.get("coin_id", kwargs.get("coin", "coingecko"))
         stage = kwargs.get("stage", "api")
         task = kwargs.get("task", "fetch")
+        dead_letter_dir = kwargs.get("dead_letter_dir")
         for attempt in range(1, attempts + 1):
             try:
                 resp = func(*args, **kwargs)
@@ -200,6 +212,7 @@ def retry_and_handle_rate_limits(func: Callable[..., requests.Response]) -> Call
                         meta={"status_code": resp.status_code, "url": resp.url},
                         stage="api",
                         run_id=run_id,
+                        dead_letter_dir=dead_letter_dir,
                     )
                     raise PermanentAPIError(f"Permanent HTTP error: {resp.status_code}")
 
@@ -269,6 +282,7 @@ def retry_and_handle_rate_limits(func: Callable[..., requests.Response]) -> Call
                     error=str(exc),
                     meta={},
                     run_id=run_id,
+                    dead_letter_dir=dead_letter_dir,
                 )
                 raise PermanentAPIError(str(exc)) from exc
 
@@ -281,7 +295,7 @@ def retry_and_handle_rate_limits(func: Callable[..., requests.Response]) -> Call
 
 @retry_and_handle_rate_limits
 def _do_get(url: str, **kwargs) -> requests.Response:
-    run_id = kwargs.pop("run_id", None)
+    kwargs.pop("dead_letter_dir", None)
     headers = kwargs.pop("headers", {}) or {}
     if API_KEY:
         headers.setdefault("x-cg-pro-api-key", API_KEY)
@@ -290,7 +304,7 @@ def _do_get(url: str, **kwargs) -> requests.Response:
     return requests.get(url, headers=headers, params=params, timeout=timeout, **kwargs)
 
 
-def fetch_coin_market_data(coin_id: str, run_id: Optional[str] = None) -> Dict[str, Any]:
+def fetch_coin_market_data(coin_id: str, run_id: str | None = None) -> dict[str, Any]:
     """
     Fetch current market data from CoinGecko, with retries, rate-limit handling,
     transient/permanent classification, and dead-letter writes for permanent failures.

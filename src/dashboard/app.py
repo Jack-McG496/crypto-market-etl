@@ -1,19 +1,20 @@
 import streamlit as st
+
 from src.dashboard.constants import TIME_WINDOW_OPTIONS
 from src.dashboard.data import filter_dashboard_data, load_data
 from src.dashboard.layout import (
-    render_page_header,
-    render_status_panel,
-    render_price_chart,
-    render_zscore_chart,
-    render_comparison_chart,
-    render_regime_timeline,
     render_alert_panel,
     render_alert_trend,
-    render_raw_data_expanders,
-    render_operational_panel,
+    render_comparison_chart,
     render_dead_letter_view,
+    render_operational_panel,
+    render_page_header,
+    render_price_chart,
+    render_raw_data_expanders,
+    render_regime_timeline,
     render_replay_section,
+    render_status_panel,
+    render_zscore_chart,
 )
 
 st.set_page_config(page_title="Crypto Volatility Monitor", layout="wide")

@@ -1,8 +1,8 @@
+import pandas as pd
 import pytest as pytest
 
 from src.alerts.alert_engine import generate_alerts
 from src.load.alerts_loader import load_alert_data
-import pandas as pd
 from src.pipelines.metrics import PipelineMetrics
 
 

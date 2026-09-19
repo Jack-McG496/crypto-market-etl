@@ -1,27 +1,27 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
-from src.utils.logger import get_logger
 from src.config.settings import settings
 
 # reuse retry/dead-letter helpers and exceptions from coingecko client
 from src.extract.coingecko_api import (
-    retry_and_handle_rate_limits,
+    PermanentAPIError,
     _do_get,
     _write_dead_letter,
-    PermanentAPIError,
 )
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
 def _get_setting(attr: str, default: Any = None) -> Any:
-    return getattr(settings, attr, default)
+    value = getattr(settings, attr, default)
+    return default if value is None else value
 
 
-BASE_URL: Optional[str] = _get_setting("FEAR_GREED_API_URL", "https://api.alternative.me/fng")
+BASE_URL: str | None = _get_setting("FEAR_GREED_API_URL", "https://api.alternative.me/fng")
 REQUEST_TIMEOUT: float = _get_setting("FEAR_GREED_REQUEST_TIMEOUT", 10)
 RAW_DATA_DIR: Path = Path(_get_setting("RAW_DATA_DIR", "data/raw"))
 DEAD_LETTER_DIR: Path = Path(_get_setting("DEAD_LETTER_DIR", "data/dead_letter"))
@@ -33,7 +33,6 @@ def _build_url(limit: int) -> str:
     return f"{BASE_URL.rstrip('/')}/?limit={limit}&format=json"
 
 
-@retry_and_handle_rate_limits
 def _fg_get(url: str, **kwargs):
     # Use the shared _do_get implementation so the same retry/rate-limit logic applies.
     # Pass a meaningful source key so dead-letter entries reference "fear_greed".
@@ -41,7 +40,7 @@ def _fg_get(url: str, **kwargs):
     return _do_get(url, timeout=REQUEST_TIMEOUT, params={}, **kwargs)
 
 
-def fetch_fear_greed_index(limit: int = 1, run_id: Optional[str] = None) -> Dict[str, Any]:
+def fetch_fear_greed_index(limit: int = 1, run_id: str | None = None) -> dict[str, Any]:
     """
     Fetch Crypto Fear & Greed Index with same retry/backoff/rate-limit/dead-letter behavior
     as the CoinGecko client. Raises PermanentAPIError or TransientAPIError on failure.
@@ -54,12 +53,20 @@ def fetch_fear_greed_index(limit: int = 1, run_id: Optional[str] = None) -> Dict
             payload={},
             error=str(exc),
             meta={},
+            dead_letter_dir=DEAD_LETTER_DIR,
         )
         raise
 
     logger = get_logger(__name__, run_id=run_id, stage="extract", task="fetch_fear_greed_index", coin_id="fear_greed")
     logger.info("Fetching Fear & Greed index (limit=%d)", limit)
-    result = _fg_get(url, coin="fear_greed", run_id=run_id, stage="extract", task="fetch_fear_greed_index")
+    result = _fg_get(
+        url,
+        coin="fear_greed",
+        run_id=run_id,
+        stage="extract",
+        task="fetch_fear_greed_index",
+        dead_letter_dir=DEAD_LETTER_DIR,
+    )
     logger.info("Fetched Fear & Greed index")
     return result
 

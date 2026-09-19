@@ -1,7 +1,7 @@
 import json
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Any
 
 from src.pipelines.metrics import PipelineMetrics
 
@@ -9,13 +9,13 @@ DEFAULT_DB_PATH = Path("data/metrics/pipeline_runs.sqlite")
 DEFAULT_JSON_PATH = Path("data/metrics/latest_metrics.json")
 
 
-def _ensure_parent(path: Union[str, Path]) -> Path:
+def _ensure_parent(path: str | Path) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 
 
-def persist_run_metrics(metrics: PipelineMetrics, db_path: Union[str, Path] = DEFAULT_DB_PATH) -> Path:
+def persist_run_metrics(metrics: PipelineMetrics, db_path: str | Path = DEFAULT_DB_PATH) -> Path:
     db_path = _ensure_parent(db_path)
     conn = sqlite3.connect(db_path)
     try:
@@ -83,7 +83,7 @@ def persist_run_metrics(metrics: PipelineMetrics, db_path: Union[str, Path] = DE
     return db_path
 
 
-def fetch_pipeline_runs(db_path: Union[str, Path] = DEFAULT_DB_PATH) -> list[Dict[str, Any]]:
+def fetch_pipeline_runs(db_path: str | Path = DEFAULT_DB_PATH) -> list[dict[str, Any]]:
     conn = sqlite3.connect(db_path)
     try:
         rows = conn.execute(

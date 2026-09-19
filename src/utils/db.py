@@ -1,5 +1,7 @@
 import psycopg2
-from src.config.settings import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+
+from src.config.settings import DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER
+
 
 def get_connection():
     """

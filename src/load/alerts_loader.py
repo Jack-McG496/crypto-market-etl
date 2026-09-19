@@ -1,7 +1,8 @@
-from psycopg2.extras import execute_batch
-from src.utils.logger import get_logger
-from src.utils.db import get_connection
 import pandas as pd
+from psycopg2.extras import execute_batch
+
+from src.utils.db import get_connection
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

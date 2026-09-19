@@ -1,4 +1,5 @@
 import requests
+
 from src.config.settings import SLACK_TIMEOUT, SLACK_WEBHOOK_URL
 from src.utils.logger import get_logger
 

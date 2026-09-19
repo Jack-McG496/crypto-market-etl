@@ -1,8 +1,9 @@
-import streamlit as st
-import plotly.express as px
+
 import pandas as pd
+import plotly.express as px
+import streamlit as st
+
 from src.dashboard.constants import REGIME_COLORS
-import datetime
 
 
 def render_page_header():
@@ -83,7 +84,7 @@ def render_zscore_chart(analytics: pd.DataFrame):
     fig.add_hline(y=threshold, line_dash="dash", annotation_text="Threshold", annotation_position="top left")
     fig.add_hline(y=-threshold, line_dash="dash")
 
-    anomalies = analytics[analytics["is_anomalous"] == True]
+    anomalies = analytics[analytics["is_anomalous"]]
     if not anomalies.empty:
         fig.add_scatter(
             x=anomalies["timestamp_utc"],
@@ -125,7 +126,7 @@ def render_comparison_chart(
 
         # compute normalized price per coin and ensure coin_id column exists
         norm_list = []
-        for coin, g in market.groupby("coin_id"):
+        for _coin, g in market.groupby("coin_id"):
             g = g.sort_values("timestamp_utc").copy()
             if g.empty or g["price_usd"].iloc[0] == 0:
                 continue

@@ -1,10 +1,10 @@
+import time
+
+from src.load.alerts_loader import load_pending_alerts, mark_alert_notified
 from src.notifications.slack_notifier import send_slack_alert
-from src.load.alerts_loader import load_pending_alerts
-from src.load.alerts_loader import mark_alert_notified
 from src.pipelines.metrics import PipelineMetrics
 from src.utils.db import get_connection
 from src.utils.logger import get_logger
-import time
 
 logger = get_logger(__name__)
 

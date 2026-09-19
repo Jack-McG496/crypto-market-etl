@@ -1,5 +1,6 @@
 from src.analytics.volatility_analysis import calculate_volatility_features
 
+
 def test_returns_are_computed(sample_market_df):
 
     result = calculate_volatility_features(

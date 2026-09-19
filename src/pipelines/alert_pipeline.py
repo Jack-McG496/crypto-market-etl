@@ -1,8 +1,9 @@
+import time
+
 from src.alerts.alert_engine import generate_alerts
 from src.load.alerts_loader import load_alert_data
 from src.pipelines.metrics import PipelineMetrics
 from src.utils.logger import get_logger
-import time
 
 logger = get_logger(__name__)
 

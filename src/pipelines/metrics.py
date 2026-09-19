@@ -1,11 +1,11 @@
 import json
-from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Optional
+from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
 class PipelineMetrics:
-    run_id: Optional[str] = None
+    run_id: str | None = None
     market_rows: int = 0
     analytics_rows: int = 0
     alerts_generated: int = 0
@@ -13,8 +13,8 @@ class PipelineMetrics:
     notifications_failed: int = 0
     rows_ingested: int = 0
     retries: int = 0
-    freshness_lag: Optional[float] = None
-    last_successful_run: Optional[str] = None
+    freshness_lag: float | None = None
+    last_successful_run: str | None = None
     run_duration: float = 0.0
     duration_seconds: float = field(default=0.0, repr=False)
     status: str = "running"
@@ -25,7 +25,7 @@ class PipelineMetrics:
         elif self.run_duration == 0.0 and self.duration_seconds:
             self.run_duration = self.duration_seconds
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         return {
             "run_id": self.run_id,
             "market_rows": self.market_rows,
@@ -42,7 +42,7 @@ class PipelineMetrics:
             "status": self.status,
         }
 
-    def to_db_row(self) -> Dict[str, Any]:
+    def to_db_row(self) -> dict[str, Any]:
         return {
             "run_id": self.run_id,
             "run_duration": self.run_duration or self.duration_seconds,

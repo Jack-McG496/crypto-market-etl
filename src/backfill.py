@@ -1,7 +1,7 @@
+from src.config.settings import BACKFILL_DAYS, COIN_LIST
 from src.extract.coingecko_history import backfill_coins
 from src.load.history_loader import load_historical_data
 from src.utils.logger import get_logger
-from src.config.settings import BACKFILL_DAYS, COIN_LIST
 
 logger = get_logger(__name__)
 coins = COIN_LIST

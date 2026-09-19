@@ -1,10 +1,10 @@
 import json
+
 import pytest
 import requests
-from pathlib import Path
 
-from src.extract import fear_greed_api as fg
 from src.extract import coingecko_api as cg
+from src.extract import fear_greed_api as fg
 
 
 class FakeResp:

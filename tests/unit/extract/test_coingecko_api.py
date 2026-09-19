@@ -1,8 +1,7 @@
 import json
+
 import pytest
 import requests
-from pathlib import Path
-from types import SimpleNamespace
 
 from src.extract import coingecko_api as cg
 
@@ -49,6 +48,25 @@ def test_retry_on_transient_then_success(monkeypatch):
     res = cg.fetch_coin_market_data("ethereum")
     assert res["id"] == "ethereum"
     assert calls["n"] == 1
+
+
+def test_retry_on_network_error_then_success(monkeypatch):
+    calls = {"n": 0}
+
+    def fake_get(*a, **k):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise requests.exceptions.ConnectionError("network down")
+        return FakeResp(200, {"id": "solana"})
+
+    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(cg, "RETRY_CFG", {"attempts": 3, "backoff_factor": 0, "max_backoff_seconds": 1, "jitter": False, "strategy": "fixed"})
+    monkeypatch.setattr(cg.time, "sleep", lambda s: None)
+
+    res = cg.fetch_coin_market_data("solana")
+
+    assert res["id"] == "solana"
+    assert calls["n"] == 2
 
 
 def test_rate_limit_honors_retry_after_and_succeeds(monkeypatch, tmp_path):

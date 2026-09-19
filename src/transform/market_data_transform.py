@@ -1,13 +1,13 @@
+import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
-import json
 import pandas as pd
 
-from src.utils.logger import get_logger
-from src.config.settings import RAW_DATA_DIR, PROCESSED_DATA_DIR, settings
+from src.config.settings import PROCESSED_DATA_DIR, RAW_DATA_DIR, settings
 from src.extract.coingecko_api import _write_dead_letter
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -16,7 +16,7 @@ class InvalidRawDataError(Exception):
     pass
 
 
-def load_latest_coingecko_file(coin: str) -> Tuple[Dict[str, Any], Path]:
+def load_latest_coingecko_file(coin: str) -> tuple[dict[str, Any], Path]:
     """
     Load the latest raw CoinGecko JSON file for a given coin.
     Returns tuple (parsed_json, file_path)
@@ -39,7 +39,7 @@ def _is_valid_number(v: Any) -> bool:
         return False
 
 
-def transform_market_data(raw_data: Dict[str, Any], source_file: Optional[Path] = None, run_id: Optional[str] = None) -> Dict[str, Any]:
+def transform_market_data(raw_data: dict[str, Any], source_file: Path | None = None, run_id: str | None = None) -> dict[str, Any]:
     """
     Transform raw CoinGecko JSON into a flat dict with validation and metadata.
     Raises InvalidRawDataError (and writes dead-letter) on permanent validation failures.
@@ -110,7 +110,7 @@ def transform_market_data(raw_data: Dict[str, Any], source_file: Optional[Path] 
     return out
 
 
-def run_transform(coins: list[str], run_id: Optional[str] = None) -> pd.DataFrame:
+def run_transform(coins: list[str], run_id: str | None = None) -> pd.DataFrame:
     """
     Run transform for multiple coins and return a DataFrame.
     Invalid raw records are written to the dead-letter and skipped.

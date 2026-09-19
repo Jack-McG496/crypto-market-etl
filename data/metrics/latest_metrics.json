@@ -1,0 +1,1 @@
+{"alerts_generated": 0, "analytics_rows": 0, "duration_seconds": 12.5, "freshness_lag": 90.0, "last_successful_run": "2026-08-29T10:00:00Z", "market_rows": 0, "notifications_failed": 0, "notifications_sent": 0, "retries": 3, "rows_ingested": 42, "run_duration": 12.5, "run_id": "run-456", "status": "running"}

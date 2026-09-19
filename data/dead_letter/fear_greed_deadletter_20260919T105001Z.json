@@ -1,0 +1,14 @@
+{
+  "source": "fear_greed",
+  "stage": "api",
+  "timestamp_utc": "20260919T105001Z",
+  "error": "HTTP 404",
+  "meta": {
+    "status_code": 404,
+    "url": "http://test"
+  },
+  "payload": {
+    "error": "not found"
+  },
+  "run_id": null
+}

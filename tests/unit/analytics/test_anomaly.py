@@ -1,5 +1,7 @@
-from src.analytics.anomaly_detection import detect_anomalies
 import pandas as pd
+
+from src.analytics.anomaly_detection import detect_anomalies
+
 
 def test_anomaly_above_detection():
     # Mock data

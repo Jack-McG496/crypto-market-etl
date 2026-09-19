@@ -1,8 +1,14 @@
-from src.extract.coingecko_api import fetch_coin_market_data, save_raw_json, PermanentAPIError
-from src.extract.fear_greed_api import fetch_fear_greed_index, save_raw_json as save_fg_json
-from src.utils.logger import get_logger
-from src.config.settings import COIN_LIST
 import time
+
+from src.config.settings import COIN_LIST
+from src.extract.coingecko_api import (
+    PermanentAPIError,
+    fetch_coin_market_data,
+    save_raw_json,
+)
+from src.extract.fear_greed_api import fetch_fear_greed_index
+from src.extract.fear_greed_api import save_raw_json as save_fg_json
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

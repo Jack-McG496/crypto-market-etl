@@ -5,9 +5,8 @@ from pathlib import Path
 
 import psycopg2
 from airflow import DAG
-from airflow.models.taskinstance import TaskInstance
-from airflow.operators.python import PythonOperator
 from airflow.models import TaskGroup
+from airflow.operators.python import PythonOperator
 from airflow.utils.trigger_rule import TriggerRule
 
 from src.config.settings import settings

@@ -1,10 +1,13 @@
 from unittest.mock import patch
+
+import pandas as pd
+import pytest
+
 from src.alerts.alert_engine import generate_alerts
 from src.load.alerts_loader import load_alert_data
-from src.pipelines.notification_pipeline import run_notification_pipeline
 from src.pipelines.metrics import PipelineMetrics
-import pytest
-import pandas as pd
+from src.pipelines.notification_pipeline import run_notification_pipeline
+
 
 @patch("requests.post")
 @pytest.mark.integration

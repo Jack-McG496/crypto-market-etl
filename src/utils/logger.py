@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from src.config.settings import LOG_DIR, LOG_FILE
 
@@ -16,7 +16,7 @@ def _safe_value(value: Any) -> str:
 class ContextFilter(logging.Filter):
     """Attach default structured metadata to every record."""
 
-    def __init__(self, default_context: Optional[Dict[str, Any]] = None):
+    def __init__(self, default_context: dict[str, Any] | None = None):
         super().__init__()
         self.default_context = default_context or {}
 
@@ -51,7 +51,7 @@ def get_logger(name: str, **context: Any) -> logging.Logger:
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
-    logger.propagate = False
+    logger.propagate = True
 
     if not logger.handlers:
         formatter = logging.Formatter(

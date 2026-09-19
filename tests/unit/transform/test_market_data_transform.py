@@ -1,9 +1,10 @@
 import json
-import pytest
 from pathlib import Path
 
-from src.transform import market_data_transform as mdt
+import pytest
+
 from src.extract import coingecko_api as cg
+from src.transform import market_data_transform as mdt
 
 
 def _write_raw(tmp_path: Path, coin: str, payload: dict) -> Path:
@@ -57,6 +58,33 @@ def test_missing_top_level_writes_dead_letter_and_skips(monkeypatch, tmp_path):
     body = json.loads(dl_files[0].read_text(encoding="utf-8"))
     assert body["source"] in ("missingcoin", "unknown")
     assert "Missing top-level keys" in body["error"]
+
+
+def test_malformed_numeric_payload_writes_dead_letter(monkeypatch, tmp_path):
+    monkeypatch.setattr(mdt, "RAW_DATA_DIR", tmp_path / "raw")
+    monkeypatch.setattr(cg, "DEAD_LETTER_DIR", tmp_path / "dead")
+    payload = {
+        "id": "badcoin",
+        "symbol": "bc",
+        "name": "BadCoin",
+        "market_data": {
+            "current_price": {"usd": "NaN"},
+            "market_cap": {"usd": 600000000},
+            "total_volume": {"usd": 30000000},
+            "circulating_supply": 19000000,
+        },
+    }
+    _write_raw(tmp_path, "badcoin", payload)
+
+    df = mdt.run_transform(["badcoin"])
+
+    assert len(df) == 0
+    dl_files = list((tmp_path / "dead").glob("*_deadletter_*.json"))
+    assert dl_files
+    body = json.loads(dl_files[0].read_text(encoding="utf-8"))
+    assert body["source"] == "badcoin"
+    assert body["payload"]["id"] == "badcoin"
+    assert body["error"] == "One or more numeric market fields are invalid"
 
 
 def test_zero_market_cap_sets_volume_ratio_none(monkeypatch, tmp_path):
