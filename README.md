@@ -74,6 +74,22 @@ This allows downstream use cases such as:
 - Scheduled execution
 - Slack notification alerts
 
+### Feature Matrix
+
+| Area | Feature | Status |
+|---|---|---:|
+| Extraction | CoinGecko market fetcher | Implemented |
+| Extraction | Fear & Greed fetcher | Implemented |
+| Transformation | Rolling vol & features | Implemented |
+| Storage | PostgreSQL loader & schema | Implemented |
+| Orchestration | Airflow DAG (scheduled) | Partial |
+| Reliability | Retry/backoff + DLQ | Partial/Planned |
+| Observability | Structured logs & run metadata | Planned |
+| Alerts | Slack notifications | Implemented |
+| Dashboard | Streamlit visualizations | Implemented |
+| Operational runbook | Runbook & DLQ replay | Planned |
+
+
 ### Data Sources
 ### Market Data
 - CoinGecko API
@@ -206,6 +222,54 @@ docker compose --profile airflow up -d
 docker compose up -d postgres backfill pipeline dashboard
 ```
 
+### Quickstart — Docker Compose (recommended)
+
+1. Copy example env and set minimal values:
+
+```powershell
+copy .env.example .env
+# Edit .env to set POSTGRES_PASSWORD and any API keys used by extractors
+```
+
+2. Start services (Airflow-enabled profile):
+
+```powershell
+docker compose --profile airflow up -d
+```
+
+3. Verify services are healthy:
+
+```powershell
+docker compose ps
+```
+
+4. Open Airflow UI at http://localhost:8080 and Streamlit dashboard at the configured port (default 8501).
+
+### Quickstart — No-Airflow (developer / lightweight)
+
+If you want to run the pipeline parts without starting Airflow (useful for development):
+
+1. Start database and dashboard services:
+
+```powershell
+docker compose up -d postgres dashboard
+```
+
+2. Run the pipeline process container directly (one-shot ingestion + transform + load):
+
+```powershell
+docker compose up --no-deps --build pipeline
+```
+
+3. Or run the local runner (Python venv active):
+
+```powershell
+# from project root
+python -m src.main --run-once
+```
+
+This runs an incremental fetch -> transform -> load cycle without Airflow.
+
 ## Example Dashboard
 
 ![Dashboard1.png](Dashboard1.png)
@@ -219,3 +283,63 @@ docker compose up -d postgres backfill pipeline dashboard
 - Machine learning anomaly detection
 - Backtesting alert effectiveness
 - Cloud Deployment
+
+---
+
+## Runbook — Inspecting failures, replaying DLQ, and re-running DAGs
+
+This section gives short operational steps for common failure scenarios.
+
+- **Inspect a failing run (Airflow)**:
+  1. Open Airflow UI (http://localhost:8080) → DAGs → click the DAG → Browse Runs.
+  2. Click the failing task, then open "Logs" to inspect the error and stack trace.
+  3. Check container logs for the service running the task:
+
+```powershell
+docker compose logs --no-color --tail=200 pipeline
+docker compose logs --no-color --tail=200 backfill
+```
+
+  4. If the failure looks like malformed input, inspect the dead-letter folder: `data/dead_letter/` for saved payloads and timestamps.
+
+- **Replay DLQ (dead-letter files)**:
+  1. Review files in `data/dead_letter/` and open to validate contents.
+  2. For small batches, re-ingest via the backfill container which supports replaying from a file path:
+
+```powershell
+# example: replay a single dead-letter JSON
+docker compose run --rm backfill python -m src.backfill --replay data/dead_letter/fear_greed_deadletter_20260919T104843Z.json
+```
+
+  3. For many files, use the included replay helper (or a short script) to iterate and re-submit; ensure you set `REPLAY_MODE=true` in `.env` to avoid duplicating alerts.
+
+- **Re-run a DAG / Task**:
+  - Via Airflow UI: Find the DAG run and use the "Clear" action on the task(s) to re-trigger downstream runs.
+  - CLI (inside the airflow scheduler container):
+
+```powershell
+# trigger a DAG run
+docker compose exec airflow-scheduler airflow dags trigger crypto_etl_dag
+
+# re-run a single task (example)
+docker compose exec airflow-scheduler airflow tasks clear crypto_etl_dag --start-date <date> --end-date <date> --downstream
+```
+
+Notes:
+- Use the Airflow UI for one-off re-runs during development.
+- Ensure database schema is applied before replays to avoid loader errors.
+
+---
+
+## What I Would Improve Next (interview honesty)
+
+Short list of engineering and product improvements I would prioritize if continuing this project:
+
+- Reliability & Observability: implement structured logging, metrics (Prometheus + Grafana), and end-to-end traces for key pipeline stages.
+- Robust DLQ & Idempotency: make ingestion idempotent, add per-message retry policies, and a safe replay workflow with deduplication keys.
+- Secrets & Deployment: move to a secrets manager (Vault/Cloud KMS) and containerize CI/CD for automated deployments.
+- Testing & CI: add contract tests for extractors, integration tests against a managed test DB, and smoke tests that run in CI.
+- Scalability: introduce stream processing (Kafka + Faust or Flink) to move from polling to event-driven ingestion where low-latency detection is required.
+- Model improvements: evaluate ML-based anomaly detectors and backtest alert precision/recall against historical events.
+
+If you'd like, I can also add a short `runbook.md` file with the above commands and templates for common Airflow CLI invocations.
